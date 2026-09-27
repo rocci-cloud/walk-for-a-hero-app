@@ -14,8 +14,11 @@ import {
 import { Newsreader_500Medium, Newsreader_400Regular_Italic } from "@expo-google-fonts/newsreader";
 import { AuthProvider, useAuth } from "../auth/AuthContext";
 import { colors } from "../theme";
+import { applyUpdateNow } from "../lib/appUpdates";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+// Pick up an over-the-air fix on this launch rather than the next one.
+applyUpdateNow();
 
 function Gate() {
   const { state } = useAuth();

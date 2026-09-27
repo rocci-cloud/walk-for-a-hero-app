@@ -16,6 +16,7 @@ import { Pill } from "../components/Pill";
 import { APPLE_SIGNIN_ENABLED, SITE_URL } from "../lib/config";
 import { signInWithEmail, signInWithProvider, SignInError } from "../lib/session";
 import { colors, fonts } from "../theme";
+import { runningVersion } from "../lib/appUpdates";
 
 export default function SignIn() {
   const { signedIn } = useAuth();
@@ -23,9 +24,11 @@ export default function SignIn() {
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState<null | "email" | "google" | "apple">(null);
   const [error, setError] = useState("");
+  const [detail, setDetail] = useState("");
 
   const run = async (kind: "email" | "google" | "apple") => {
     setError("");
+    setDetail("");
     setBusy(kind);
     try {
       if (kind === "email") {
@@ -39,8 +42,9 @@ export default function SignIn() {
         if (!ok) return; // closed the sign-in window
       }
       await signedIn();
-    } catch (e) {
+    } catch (e: any) {
       setError(e instanceof SignInError ? e.message : "Something went wrong. Please try again.");
+      setDetail(e instanceof SignInError ? e.detail : String(e?.message || e));
     } finally {
       setBusy(null);
     }
@@ -82,6 +86,7 @@ export default function SignIn() {
                 {error}
               </Text>
             ) : null}
+            {detail ? <Text style={styles.detail}>{detail}</Text> : null}
             <Pill label="Sign in" icon="arrow" busy={busy === "email"} disabled={!!busy} onPress={() => run("email")} style={{ marginTop: 18 }} />
             <Pressable onPress={() => WebBrowser.openBrowserAsync(`${SITE_URL}/forgot-password`)} style={styles.linkRow}>
               <Text style={styles.link}>Forgot password?</Text>
@@ -97,6 +102,7 @@ export default function SignIn() {
           <Pressable onPress={() => WebBrowser.openBrowserAsync(`${SITE_URL}/become-a-walker`)} style={[styles.linkRow, { marginTop: 22 }]}>
             <Text style={styles.link}>New here? Become a walker at walkforahero.com</Text>
           </Pressable>
+          <Text style={styles.version}>{runningVersion()}</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -126,5 +132,7 @@ const styles = StyleSheet.create({
   error: { fontFamily: fonts.semibold, color: colors.red, marginTop: 12, fontSize: 14, lineHeight: 20 },
   linkRow: { paddingVertical: 12, alignItems: "center" },
   link: { fontFamily: fonts.semibold, fontSize: 14, color: colors.blue, textDecorationLine: "underline" },
+  detail: { fontFamily: fonts.body, color: colors.muted, marginTop: 6, fontSize: 11, lineHeight: 15 },
+  version: { textAlign: "center", fontFamily: fonts.body, fontSize: 11, color: colors.muted, marginTop: 8 },
   or: { textAlign: "center", fontFamily: fonts.semibold, color: colors.muted, marginVertical: 14 },
 });

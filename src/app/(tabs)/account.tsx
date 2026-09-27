@@ -9,6 +9,7 @@ import { callFunction, functionError } from "../../lib/base44";
 import { SITE_URL } from "../../lib/config";
 import { openWalk } from "../../walk/store";
 import { colors, fonts } from "../../theme";
+import { runningVersion } from "../../lib/appUpdates";
 
 /**
  * Account: sign out, and delete the account (Apple App Review 5.1.1(v)
@@ -121,7 +122,7 @@ export default function Account() {
           )}
         </View>
 
-        <Text style={styles.version}>Walk For A Hero {Constants.expoConfig?.version ?? ""}</Text>
+        <Text style={styles.version}>Walk For A Hero {Constants.expoConfig?.version ?? ""} · {runningVersion()}</Text>
       </ScrollView>
     </SafeAreaView>
   );
