@@ -15,5 +15,9 @@
     "src/lib/geo.js",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
+  ],
+  "exclude": [
+    "test",
+    "node_modules"
   ]
 }

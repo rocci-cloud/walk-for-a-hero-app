@@ -73,9 +73,10 @@ const config: ExpoConfig = {
     ],
   ],
   experiments: { typedRoutes: true },
+  // The Foundation's Expo organization and project (expo.dev/accounts/walkforahero).
+  owner: "walkforahero",
   extra: {
-    // Filled in by `eas init` (links this project to the Foundation's Expo account).
-    eas: { projectId: process.env.EAS_PROJECT_ID },
+    eas: { projectId: "cc8d9475-79b6-4007-b78c-5dcfac8b0710" },
   },
 };
 
