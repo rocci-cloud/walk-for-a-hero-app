@@ -1,6 +1,11 @@
 # Every push to main sends an over-the-air update to installed test builds
 # (the "preview" channel). Changes that need a new native build are skipped
 # automatically by runtimeVersion "fingerprint" in app.config.ts.
+#
+# One job per phone platform: platform "all" also exports a WEB bundle, which
+# this app doesn't have (no react-native-web) — that failed the first run.
+# (Kept out of app.config.ts on purpose: changing the app config changes the
+# build fingerprint, and updates would then skip already-installed builds.)
 name: Update preview builds
 
 on:
@@ -8,9 +13,17 @@ on:
     branches: ['main']
 
 jobs:
-  update_preview:
-    name: Publish update to preview
+  update_android:
+    name: Publish update (Android)
     type: update
     environment: preview
     params:
       channel: preview
+      platform: android
+  update_ios:
+    name: Publish update (iPhone)
+    type: update
+    environment: preview
+    params:
+      channel: preview
+      platform: ios
