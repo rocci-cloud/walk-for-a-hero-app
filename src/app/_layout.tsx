@@ -33,6 +33,8 @@ function Gate() {
       <Stack.Protected guard={!signedIn}>
         <Stack.Screen name="sign-in" />
       </Stack.Protected>
+      {/* Sign-in return link; reachable signed in or out (see auth.tsx). */}
+      <Stack.Screen name="auth" options={{ animation: "none" }} />
     </Stack>
   );
 }
