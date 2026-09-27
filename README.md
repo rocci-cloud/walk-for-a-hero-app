@@ -54,6 +54,10 @@ npx expo start --dev-client                 # then open the dev build on the pho
 
 Expo Go won't work: background GPS and the map need a development build.
 
+## Over-the-air updates
+
+Installed builds get JavaScript/screen fixes automatically: every push to `main` runs `.eas/workflows/update.yml` on Expo, which publishes an update to the `preview` channel. The phone downloads it in the background and uses it the **next time the app is opened** (close it fully and reopen to get it right away). Changes that need new native code (a new library, permission, icon or splash) can't go over the air. `runtimeVersion: fingerprint` keeps those away from phones that can't run them, and they need a new build.
+
 ## First real walk test (the whole point of the spike)
 
 Do this on one iPhone and one Android phone:

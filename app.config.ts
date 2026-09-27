@@ -75,6 +75,14 @@ const config: ExpoConfig = {
   experiments: { typedRoutes: true },
   // The Foundation's Expo organization and project (expo.dev/accounts/walkforahero).
   owner: "walkforahero",
+  // Over-the-air updates (EAS Update). Every push to main publishes an
+  // update (.eas/workflows/update.yml); installed builds download it in the
+  // background and use it on the next launch. runtimeVersion "fingerprint"
+  // means an update only goes to builds with the SAME native code — a change
+  // that needs a new build (new native library, permission, icon) is never
+  // sent to phones that can't run it.
+  runtimeVersion: { policy: "fingerprint" },
+  updates: { url: "https://u.expo.dev/cc8d9475-79b6-4007-b78c-5dcfac8b0710" },
   extra: {
     eas: { projectId: "cc8d9475-79b6-4007-b78c-5dcfac8b0710" },
   },

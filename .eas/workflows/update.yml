@@ -1,0 +1,16 @@
+# Every push to main sends an over-the-air update to installed test builds
+# (the "preview" channel). Changes that need a new native build are skipped
+# automatically by runtimeVersion "fingerprint" in app.config.ts.
+name: Update preview builds
+
+on:
+  push:
+    branches: ['main']
+
+jobs:
+  update_preview:
+    name: Publish update to preview
+    type: update
+    environment: preview
+    params:
+      channel: preview
