@@ -1,8 +1,4 @@
-import { registerRootComponent } from 'expo';
-
-import App from './App';
-
-// registerRootComponent calls AppRegistry.registerComponent('main', () => App);
-// It also ensures that whether you load the app in Expo Go or in a native build,
-// the environment is set up appropriately
-registerRootComponent(App);
+// The background location task must be registered at module load, before the
+// router mounts, so the OS can wake the app into it with no UI running.
+import "./src/walk/locationTask";
+import "expo-router/entry";
