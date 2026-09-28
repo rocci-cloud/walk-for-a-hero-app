@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { base44, httpStatus } from "../lib/base44";
 import { clearSession, restoreSession } from "../lib/session";
 import { wipeAll } from "../walk/store";
+import { registerForPush, unregisterPush } from "../lib/push";
 
 /**
  * Who is signed in, and their Walker record.
@@ -70,6 +71,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!me?.email) throw Object.assign(new Error("no user"), { status: 401 });
       const { walker, error } = await loadWalker(me.email);
       setState({ status: "signed_in", user: me, walker, walkerError: error });
+      // Refresh this phone's push token for anyone who already allowed notifications (never prompts).
+      registerForPush(false).catch(() => {});
     } catch (err) {
       if (httpStatus(err) === 401 || httpStatus(err) === 403) {
         await clearSession();
@@ -92,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [load]);
 
   const signOut = useCallback(async () => {
+    await unregisterPush(); // while still signed in, so the server accepts it
     await clearSession();
     try {
       wipeAll();

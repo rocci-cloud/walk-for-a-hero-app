@@ -1,15 +1,17 @@
-import { useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useCallback, useState } from "react";
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
 import { useAuth } from "../auth/AuthContext";
 import { Pill } from "../components/Pill";
-import { callFunction, functionError } from "../lib/base44";
+import { callFunction, functionError , base44 } from "../lib/base44";
 import { SITE_URL } from "../lib/config";
 import { openWalk } from "../walk/store";
 import { colors, fonts } from "../theme";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
+import { changeWalkerPhoto, removeWalkerPhoto, PhotoError } from "../lib/photo";
+import { pushPermission, registerForPush, type PushState } from "../lib/push";
 import { Avatar, Header, Row } from "../components/ui";
 import { useWalkerData } from "../auth/WalkerData";
 import { initials } from "../lib/data";
@@ -22,7 +24,17 @@ import { runningVersion } from "../lib/appUpdates";
  */
 export default function Profile() {
   const { state, signOut } = useAuth();
-  const { hero } = useWalkerData();
+  const { hero, reloadAll } = useWalkerData();
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoMsg, setPhotoMsg] = useState("");
+  const [push, setPush] = useState<PushState | null>(null);
+  const [prefs, setPrefs] = useState<Record<string, boolean>>({});
+
+  useFocusEffect(
+    useCallback(() => {
+      pushPermission().then(setPush);
+    }, []),
+  );
   const [deleting, setDeleting] = useState(false);
   const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState(false);
@@ -30,6 +42,63 @@ export default function Profile() {
 
   if (state.status !== "signed_in") return null;
   const walker = state.walker;
+
+  const onPhoto = async () => {
+    if (!walker) return;
+    setPhotoBusy(true);
+    setPhotoMsg("");
+    try {
+      const url = await changeWalkerPhoto();
+      if (url) {
+        await reloadAll();
+        setPhotoMsg("Photo updated. It shows on walkforahero.com too.");
+      }
+    } catch (e) {
+      setPhotoMsg(e instanceof PhotoError ? e.message : "Something went wrong. Please try again.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
+  const onRemovePhoto = () =>
+    Alert.alert("Remove your photo?", "Your initials will show instead.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: async () => {
+          setPhotoBusy(true);
+          try {
+            await removeWalkerPhoto();
+            await reloadAll();
+            setPhotoMsg("");
+          } catch (e) {
+            setPhotoMsg(e instanceof PhotoError ? e.message : "Something went wrong. Please try again.");
+          } finally {
+            setPhotoBusy(false);
+          }
+        },
+      },
+    ]);
+
+  const turnOnPush = async () => {
+    const r = await registerForPush(true);
+    setPush(r);
+    if (r === "blocked") Linking.openSettings().catch(() => {});
+  };
+
+  const pref = (key: "notify_gifts" | "notify_walk_reviews" | "notify_reminders") =>
+    prefs[key] ?? ((walker as any)?.[key] !== false);
+
+  const setPref = async (key: "notify_gifts" | "notify_walk_reviews" | "notify_reminders", value: boolean) => {
+    if (!walker) return;
+    setPrefs((p) => ({ ...p, [key]: value }));
+    try {
+      await base44.entities.Walker.update(walker.id, { [key]: value });
+    } catch {
+      setPrefs((p) => ({ ...p, [key]: !value }));
+    }
+  };
 
   const unsentWalk = () => {
     const w = openWalk();
@@ -72,12 +141,26 @@ export default function Profile() {
 
         <View style={styles.card}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-            <Avatar name={initials(walker?.name || state.user.full_name)} photo={walker?.photo_url} size={60} />
+            <Avatar name={initials(walker?.name || state.user.full_name)} photo={walker?.photo_url} size={64} onPress={walker ? onPhoto : undefined} />
             <View style={{ flex: 1 }}>
               <Text style={styles.name}>{walker?.name || state.user.full_name || "Walker"}</Text>
               <Text style={styles.email}>{state.user.email}</Text>
+              {walker ? (
+                <View style={{ flexDirection: "row", gap: 16, marginTop: 6, alignItems: "center" }}>
+                  <Pressable accessibilityRole="button" onPress={onPhoto} disabled={photoBusy}>
+                    <Text style={styles.photoLink}>{walker.photo_url ? "Change photo" : "Add a photo"}</Text>
+                  </Pressable>
+                  {walker.photo_url ? (
+                    <Pressable accessibilityRole="button" onPress={onRemovePhoto} disabled={photoBusy}>
+                      <Text style={[styles.photoLink, { color: colors.muted }]}>Remove</Text>
+                    </Pressable>
+                  ) : null}
+                  {photoBusy ? <ActivityIndicator color={colors.red} /> : null}
+                </View>
+              ) : null}
             </View>
           </View>
+          {photoMsg ? <Text style={styles.photoMsg}>{photoMsg}</Text> : null}
           {walker?.slug ? (
             <Row label="My walker page" sub={`walkforahero.com/walk/${walker.slug}`} onPress={() => WebBrowser.openBrowserAsync(`${SITE_URL}/walk/${walker.slug}`)} />
           ) : null}
@@ -86,8 +169,35 @@ export default function Profile() {
             sub={hero?.name || "No hero chosen yet"}
             onPress={hero ? () => router.navigate("/hero") : () => router.push("/choose-hero")}
           />
-          <Row label="Change photo, name or city" sub="On your walkforahero.com dashboard" onPress={() => WebBrowser.openBrowserAsync(`${SITE_URL}/dashboard`)} />
+          <Row label="Change name or city" sub="On your walkforahero.com dashboard" onPress={() => WebBrowser.openBrowserAsync(`${SITE_URL}/dashboard`)} />
         </View>
+
+        {walker ? (
+          <>
+            <Text style={styles.section}>NOTIFY ME WHEN</Text>
+            <View style={styles.card}>
+              {push !== "on" ? (
+                <Row
+                  label={push === "blocked" ? "Notifications are off for this app" : "Turn on notifications"}
+                  sub={push === "blocked" ? "Turn them on in your phone's Settings." : "Know the moment someone gives or your walk is reviewed."}
+                  onPress={turnOnPush}
+                />
+              ) : null}
+              <Row
+                label="Someone gives to my walk"
+                right={<Switch value={pref("notify_gifts")} onValueChange={(v) => setPref("notify_gifts", v)} trackColor={{ true: colors.red, false: colors.paperDeep }} thumbColor={colors.white} />}
+              />
+              <Row
+                label="A walk is reviewed"
+                right={<Switch value={pref("notify_walk_reviews")} onValueChange={(v) => setPref("notify_walk_reviews", v)} trackColor={{ true: colors.red, false: colors.paperDeep }} thumbColor={colors.white} />}
+              />
+              <Row
+                label="I left a walk unfinished"
+                right={<Switch value={pref("notify_reminders")} onValueChange={(v) => setPref("notify_reminders", v)} trackColor={{ true: colors.red, false: colors.paperDeep }} thumbColor={colors.white} />}
+              />
+            </View>
+          </>
+        ) : null}
 
         <Pill label="Sign out" variant="secondary" onPress={onSignOut} style={{ marginTop: 16 }} />
 
@@ -145,6 +255,9 @@ export default function Profile() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.paper },
   pad: { padding: 20, paddingBottom: 48 },
+  section: { fontFamily: fonts.heavy, fontSize: 11, letterSpacing: 2, color: colors.muted, marginTop: 22, marginBottom: 8 },
+  photoLink: { fontFamily: fonts.bold, fontSize: 14, color: colors.blue },
+  photoMsg: { fontFamily: fonts.semibold, fontSize: 13.5, color: colors.ink, marginTop: 10 },
   card: { backgroundColor: colors.white, borderRadius: 24, padding: 18, marginTop: 16 },
   name: { fontFamily: fonts.story, fontSize: 22, color: colors.ink },
   email: { fontFamily: fonts.body, fontSize: 14, color: colors.secondary, marginTop: 4 },

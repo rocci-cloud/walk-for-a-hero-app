@@ -181,3 +181,8 @@ export async function finishPendingProviderSignIn(
   await redeem(parsed.code, pending.verifier);
   return "signed_in";
 }
+
+/** The stored session token, for the one request the SDK can't make on a phone (photo upload). */
+export async function currentToken(): Promise<string | null> {
+  return SecureStore.getItemAsync(TOKEN_KEY).catch(() => null);
+}

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "610043569203",
+    "project_id": "walk-for-a-hero",
+    "storage_bucket": "walk-for-a-hero.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:610043569203:android:871ac10b056143e5326f46",
+        "android_client_info": {
+          "package_name": "com.walkforahero.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1w-9Y7v-gv2Dpdj16J4pe4BmrN6Y-FuY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -75,6 +75,8 @@ Do this on one iPhone and one Android phone:
 - The icon, adaptive icon and splash are built from the Foundation emblem (`assets/brand/emblem.png`, 246 px). They are sharp at phone sizes; for the 512 px store listing icon, replace them with the vector logo.
 - Confirm the bundle ID `com.walkforahero.app` with the Foundation's Apple/Google accounts **before the first upload**. It can never change after that.
 - Turn on `APPLE_SIGNIN_ENABLED` in `src/lib/config.ts` (and the website's flag) once Apple is enabled in Base44.
-- Still to build: push notifications (`register-push-token` is ready on the server; needs the Foundation's Firebase project for Android), changing the walker photo in the app (`set-walker-photo`), live sharing, the Wallet card and Live Activities.
+- Push notifications: Firebase project `walk-for-a-hero` (google-services.json in the repo). Android delivery also needs the FCM V1 service-account key uploaded once to Expo (Credentials → Android → FCM V1).
+- Walker photo: pick → square 800 px JPEG (metadata stripped) → Base44 UploadFile → `set-walker-photo`, the same path as the website.
+- Still to build: live sharing, the Wallet card and Live Activities (need the Apple Developer account).
 
 © Walk For A Hero Foundation. All rights reserved.

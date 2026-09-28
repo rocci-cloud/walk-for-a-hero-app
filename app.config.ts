@@ -35,6 +35,8 @@ const config: ExpoConfig = {
   },
   android: {
     package: IS_DEV ? "com.walkforahero.app.dev" : "com.walkforahero.app",
+    // Firebase project "walk-for-a-hero" (FCM for push notifications).
+    googleServicesFile: "./google-services.json",
     adaptiveIcon: {
       backgroundColor: "#F4EEE3",
       foregroundImage: "./assets/android-icon-foreground.png",
@@ -61,6 +63,18 @@ const config: ExpoConfig = {
     "expo-font",
     "@maplibre/maplibre-react-native",
     "expo-sharing",
+    [
+      "expo-notifications",
+      { icon: "./assets/notification-icon.png", color: "#C8202A", defaultChannel: "walk-updates" },
+    ],
+    [
+      "expo-image-picker",
+      {
+        photosPermission: "Walk For A Hero uses the photo you pick as your walker photo on walkforahero.com.",
+        cameraPermission: false,
+        microphonePermission: false,
+      },
+    ],
     [
       "expo-splash-screen",
       { image: "./assets/splash-icon.png", imageWidth: 180, backgroundColor: "#F4EEE3" },

@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Stack } from "expo-router";
+import { Stack , router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -16,6 +16,7 @@ import { AuthProvider, useAuth } from "../auth/AuthContext";
 import { WalkerDataProvider } from "../auth/WalkerData";
 import { colors } from "../theme";
 import { applyUpdateNow } from "../lib/appUpdates";
+import * as Notifications from "expo-notifications";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 // Pick up an over-the-air fix on this launch rather than the next one.
@@ -30,6 +31,8 @@ function Gate() {
   if (!ready) return null;
   const signedIn = state.status === "signed_in";
   return (
+    <>
+      <NotificationTaps enabled={signedIn} />
     <WalkerDataProvider>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }}>
         <Stack.Protected guard={signedIn}>
@@ -50,7 +53,36 @@ function Gate() {
         <Stack.Screen name="auth" options={{ animation: "none" }} />
       </Stack>
     </WalkerDataProvider>
+    </>
   );
+}
+
+/** Tapping a notification opens the screen it's about. */
+function NotificationTaps({ enabled }: { enabled: boolean }) {
+  useEffect(() => {
+    if (!enabled) return;
+    const go = (data: any) => {
+      const kind = String(data?.type || data?.kind || "");
+      if (/gift|pledge|backer|donation/i.test(kind)) router.navigate("/backers");
+      else if (/walk/i.test(kind)) router.navigate("/walk");
+      else router.navigate("/");
+    };
+    // Never let notification plumbing take the app down.
+    try {
+      const last = Notifications.getLastNotificationResponse();
+      if (last) go(last.notification.request.content.data);
+    } catch {
+      /* not available */
+    }
+    let sub: { remove: () => void } | null = null;
+    try {
+      sub = Notifications.addNotificationResponseReceivedListener((r) => go(r.notification.request.content.data));
+    } catch {
+      sub = null;
+    }
+    return () => sub?.remove();
+  }, [enabled]);
+  return null;
 }
 
 export default function RootLayout() {
