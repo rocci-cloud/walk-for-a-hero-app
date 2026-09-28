@@ -4,6 +4,10 @@
 #
 # One job per phone platform: platform "all" also exports a WEB bundle, which
 # this app doesn't have (no react-native-web) — that failed the first run.
+# Android only for now: there is no iPhone build yet, and on Expo's free tier
+# every job waits in one queue — the unused iPhone job doubled the wait and
+# held up a real build on 2026-09-28. Add an update_ios job back (same shape,
+# platform: ios) with the first iPhone build.
 # (Kept out of app.config.ts on purpose: changing the app config changes the
 # build fingerprint, and updates would then skip already-installed builds.)
 name: Update preview builds
@@ -20,10 +24,3 @@ jobs:
     params:
       channel: preview
       platform: android
-  update_ios:
-    name: Publish update (iPhone)
-    type: update
-    environment: preview
-    params:
-      channel: preview
-      platform: ios
