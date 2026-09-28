@@ -10,7 +10,7 @@ import { useWalkerData } from "../../auth/WalkerData";
 import { Pill } from "../../components/Pill";
 import { WalkMap } from "../../components/WalkMap";
 import { analyzeOnFoot, formatElapsed, formatPace } from "../../lib/geo";
-import { backerCurrentCharge, money } from "../../lib/data";
+import { backerCurrentCharge, followingThisWalk, money } from "../../lib/data";
 import { MISSION_MILES } from "../../lib/config";
 import { onWalkUpdated } from "../../walk/locationTask";
 import { WalkError, finishWalk, openSettings, pauseWalk, resumeWalk, sendWalk, startWalk, type SendOutcome } from "../../walk/controller";
@@ -77,9 +77,7 @@ export default function WalkScreen() {
 
   const before = walker?.miles_walked || 0;
   const goal = walker?.goal_miles || MISSION_MILES;
-  const pledgedThisWalk = backers
-    .filter((b) => !b.collected)
-    .reduce((s, b) => s + backerCurrentCharge(b, before + live.miles) - backerCurrentCharge(b, before), 0);
+  const pledgedThisWalk = followingThisWalk(backers).reduce((s, b) => s + backerCurrentCharge(b, before + live.miles) - backerCurrentCharge(b, before), 0);
 
   const guard = async (label: string, fn: () => Promise<void>) => {
     setBusy(label);

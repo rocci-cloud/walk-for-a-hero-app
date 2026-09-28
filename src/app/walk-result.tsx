@@ -7,7 +7,7 @@ import { useWalkerData } from "../auth/WalkerData";
 import { Pill } from "../components/Pill";
 import { formatElapsed, formatPace } from "../lib/geo";
 import { MISSION_MILES } from "../lib/config";
-import { backerCurrentCharge, inviteTemplates, links, money, pledgeSummary, PROJECTION_NOTE } from "../lib/data";
+import { backerCurrentCharge, followingThisWalk, inviteTemplates, links, money, pledgeSummary, PROJECTION_NOTE } from "../lib/data";
 import { getWalk } from "../walk/store";
 import { colors, fonts } from "../theme";
 
@@ -36,13 +36,13 @@ export default function WalkResult() {
   const after = typeof r.miles_walked === "number" ? r.miles_walked : walker?.miles_walked || r.distance;
   const before = Math.max(0, after - r.distance);
   const goal = walker?.goal_miles || MISSION_MILES;
-  const earned = backers.filter((b) => !b.collected).reduce((s, b) => s + backerCurrentCharge(b, after) - backerCurrentCharge(b, before), 0);
+  const earned = followingThisWalk(backers).reduce((s, b) => s + backerCurrentCharge(b, after) - backerCurrentCharge(b, before), 0);
   const total = pledgeSummary(backers, after).pledgedToCollect;
   const secs = Math.round(walk.active_ms / 1000);
   const pace = formatPace(r.distance, secs);
   const left = Math.max(0, goal - after);
   const heroFirst = hero?.name.split(" ")[0] || "your hero";
-  const openBackers = backers.filter((b) => !b.collected).length;
+  const openBackers = followingThisWalk(backers).length;
 
   const state = r.duplicate
     ? { tone: colors.blue, title: "Already counted", sub: "This walk was sent before and counted once. Nothing was added twice." }
@@ -107,7 +107,15 @@ export default function WalkResult() {
           </Text>
         </View>
 
-        <Pill label="See the replay" icon="play" onPress={() => router.replace({ pathname: "/replay", params: { id: walk.id } })} style={{ marginTop: 22 }} />
+        {left <= 0 && walker ? (
+          <>
+            {/* Walk again (2026-09-28): the moment the walk is finished. */}
+            <Pill label="Walk again for a hero" icon="arrow" onPress={() => router.replace("/walk-again")} style={{ marginTop: 22 }} />
+            <Pill label="See the replay" variant="light" onPress={() => router.replace({ pathname: "/replay", params: { id: walk.id } })} style={{ marginTop: 10 }} />
+          </>
+        ) : (
+          <Pill label="See the replay" icon="play" onPress={() => router.replace({ pathname: "/replay", params: { id: walk.id } })} style={{ marginTop: 22 }} />
+        )}
         <Pill label="Send an update to backers" variant="light" onPress={shareUpdate} style={{ marginTop: 10 }} />
         <Pill label="Done" variant="light" onPress={() => router.back()} style={{ marginTop: 10 }} />
       </ScrollView>

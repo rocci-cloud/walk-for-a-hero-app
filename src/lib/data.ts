@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { base44 } from "./base44";
+import { base44, callFunction, functionError } from "./base44";
 import { DORMANT_AFTER_DAYS, MISSION_MILES, SITE_URL } from "./config";
 import type { Walker } from "../auth/AuthContext";
 
@@ -35,6 +35,10 @@ export type Backer = {
   collected?: boolean;
   collected_amount?: number;
   created_date?: string;
+  /** Walk again: which of the walker's walks this pledge backs. */
+  walk_number?: number;
+  /** Set once that walk is finished and the walker started another. */
+  final_miles?: number | null;
 };
 
 /* ── Activity (portal.js walkerActivityStatus) ──────────────────────── */
@@ -70,15 +74,84 @@ export function backerCurrentCharge(b: Pick<Backer, "pledge_per_mile" | "max_ple
   return Math.min(capped, MAX_COLLECTED_PER_BACKER);
 }
 
+/* ── Walk again (website portal.js, 2026-09-28) ────────────────────── */
+
+/** A pledge whose walk is finished: settled at that walk's final_miles. */
+export function isSettled(b: Pick<Backer, "final_miles">) {
+  return b?.final_miles !== undefined && b?.final_miles !== null && Number.isFinite(Number(b.final_miles));
+}
+
+/** The miles a pledge is charged against: its own walk's, not the new walk's. */
+export function pledgeMiles(b: Pick<Backer, "final_miles">, walkerMiles: number) {
+  return isSettled(b) ? Number(b.final_miles) : Number(walkerMiles) || 0;
+}
+
+/** Pledges that move with the CURRENT walk's miles. */
+export function followingThisWalk(backers: Backer[]) {
+  return backers.filter((b) => !b.collected && !isSettled(b));
+}
+
+export type CompletedWalk = {
+  walk_number?: number;
+  hero_id?: string;
+  hero_name?: string;
+  hero_slug?: string;
+  miles?: number;
+  goal_miles?: number;
+  raised?: number;
+  backers?: number;
+  started_at?: string;
+  completed_at?: string;
+};
+
+export const walkNumber = (w?: Walker | null) => Math.max(1, Number(w?.walk_number) || 1);
+export const completedWalks = (w?: Walker | null): CompletedWalk[] => (Array.isArray(w?.completed_walks) ? w!.completed_walks!.filter(Boolean) : []);
+export const lifetimeMiles = (w?: Walker | null) =>
+  (Number(w?.miles_walked) || 0) + completedWalks(w).reduce((s, c) => s + (Number(c.miles) || 0), 0);
+
+/** "first"…"tenth", then "11th"… */
+export function ordinal(n: number) {
+  const words = ["", "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"];
+  if (n >= 1 && n <= 10) return words[n];
+  const v = n % 100;
+  if (v >= 11 && v <= 13) return `${n}th`;
+  return `${n}${({ 1: "st", 2: "nd", 3: "rd" } as Record<number, string>)[n % 10] || "th"}`;
+}
+
+/** start-new-walk { action: "check" } — can this walker start another walk now? */
+export async function checkWalkAgain(): Promise<{ eligible: boolean; reason: string }> {
+  try {
+    const r: any = await callFunction("start-new-walk", { action: "check" });
+    return { eligible: !!r?.eligible, reason: String(r?.reason || "") };
+  } catch (e) {
+    return { eligible: false, reason: functionError(e) || "Couldn't reach walkforahero.com. Check your connection and try again." };
+  }
+}
+
+/** start-new-walk { action: "start" } — archive this walk, begin the next for heroId. */
+export async function startNewWalk(heroId: string) {
+  try {
+    const r: any = await callFunction("start-new-walk", { action: "start", hero_id: heroId });
+    if (!r?.walker) throw new Error(r?.error || "Your next walk didn't start. Please try again.");
+    return r.walker as Walker;
+  } catch (e: any) {
+    throw new Error(functionError(e) || e?.message || "Couldn't reach walkforahero.com. Check your connection and try again.");
+  }
+}
+
 export function pledgeSummary(backers: Backer[], miles: number) {
   const open = backers.filter((b) => !b.collected);
+  const following = open.filter((b) => !isSettled(b));
   return {
-    count: backers.length,
-    perMile: open.reduce((s, b) => s + Math.min(Number(b.pledge_per_mile) || 0, MAX_PLEDGE_PER_MILE), 0),
+    /** Backers following the current walk. */
+    count: backers.filter((b) => !isSettled(b)).length,
+    /** Uncollected pledges from earlier walks, still collectible. */
+    earlierOpen: open.length - following.length,
+    perMile: following.reduce((s, b) => s + Math.min(Number(b.pledge_per_mile) || 0, MAX_PLEDGE_PER_MILE), 0),
     /** Projected, not yet collected — the website labels it the same way. */
-    pledgedToCollect: open.reduce((s, b) => s + backerCurrentCharge(b, miles), 0),
-    /** If the walker finishes all 15 miles. */
-    pledgedAtFinish: open.reduce((s, b) => s + backerCurrentCharge(b, MISSION_MILES), 0),
+    pledgedToCollect: open.reduce((s, b) => s + backerCurrentCharge(b, pledgeMiles(b, miles)), 0),
+    /** If the walker finishes all 15 miles of this walk. */
+    pledgedAtFinish: open.reduce((s, b) => s + backerCurrentCharge(b, isSettled(b) ? Number(b.final_miles) : MISSION_MILES), 0),
     collected: backers.reduce((s, b) => s + (b.collected ? Number(b.collected_amount) || 0 : 0), 0),
   };
 }

@@ -14,7 +14,7 @@ import { changeWalkerPhoto, removeWalkerPhoto, PhotoError } from "../lib/photo";
 import { pushPermission, registerForPush, type PushState } from "../lib/push";
 import { Avatar, Header, Row } from "../components/ui";
 import { useWalkerData } from "../auth/WalkerData";
-import { initials } from "../lib/data";
+import { completedWalks, initials, lifetimeMiles, money, walkNumber } from "../lib/data";
 import { runningVersion } from "../lib/appUpdates";
 
 /**
@@ -171,6 +171,31 @@ export default function Profile() {
           />
           <Row label="Change name or city" sub="On your walkforahero.com dashboard" onPress={() => WebBrowser.openBrowserAsync(`${SITE_URL}/dashboard`)} />
         </View>
+
+        {/* Walk again (2026-09-28): every finished walk, oldest first. */}
+        {completedWalks(walker).length > 0 ? (
+          <>
+            <Text style={styles.section}>
+              YOUR WALKS · {lifetimeMiles(walker).toFixed(1)} MI IN ALL
+            </Text>
+            <View style={styles.card}>
+              {completedWalks(walker).map((c, i) => (
+                <Row
+                  key={`${c.walk_number}-${i}`}
+                  label={`Walk ${c.walk_number || i + 1} · ${(Number(c.miles) || 0).toFixed(1)} mi for ${c.hero_name || "a hero"}`}
+                  sub={[
+                    c.completed_at ? `Completed ${new Date(c.completed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : "",
+                    Number(c.raised) > 0 ? `${money(c.raised, false)} raised` : "",
+                  ].filter(Boolean).join(" · ")}
+                />
+              ))}
+              <Row
+                label={`Walk ${walkNumber(walker)} · ${(walker?.miles_walked || 0).toFixed(1)} of ${walker?.goal_miles || 15} mi${hero ? ` for ${hero.name}` : ""}`}
+                sub={(walker?.miles_walked || 0) >= (walker?.goal_miles || 15) ? "Complete" : "Walking now"}
+              />
+            </View>
+          </>
+        ) : null}
 
         {walker ? (
           <>

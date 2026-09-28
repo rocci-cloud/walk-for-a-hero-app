@@ -7,7 +7,7 @@ import { useWalkerData } from "../../auth/WalkerData";
 import { Pill } from "../../components/Pill";
 import { Card, Header } from "../../components/ui";
 import { SITE_URL } from "../../lib/config";
-import { backerCurrentCharge, initials, links, money, pledgeSummary, PROJECTION_NOTE } from "../../lib/data";
+import { backerCurrentCharge, initials, isSettled, links, money, pledgeMiles, pledgeSummary, PROJECTION_NOTE } from "../../lib/data";
 import { colors, fonts } from "../../theme";
 
 /**
@@ -74,9 +74,10 @@ export default function Backers() {
         ) : (
           <View style={{ marginTop: 18 }}>
             <Text style={styles.section}>PLEDGES · {backers.length}</Text>
-            {backers.map((b) => (
+            {[...backers.filter((b) => !isSettled(b)), ...backers.filter((b) => isSettled(b))].map((b, i, list) => (
+              <View key={b.id}>
+              {isSettled(b) && (i === 0 || !isSettled(list[i - 1])) ? <Text style={[styles.section, { marginTop: 14 }]}>FROM EARLIER WALKS</Text> : null}
               <Pressable
-                key={b.id}
                 accessibilityRole="button"
                 accessibilityHint="Opens this backer's page on walkforahero.com"
                 onPress={() => WebBrowser.openBrowserAsync(links.backerPortal(b))}
@@ -92,7 +93,9 @@ export default function Backers() {
                   <Text style={styles.backerSub}>
                     {b.collected
                       ? `Collected ${money(b.collected_amount)}`
-                      : `${money(backerCurrentCharge(b, miles))} so far${b.max_pledge ? ` · up to ${money(b.max_pledge, false)}` : ""}`}
+                      : isSettled(b)
+                        ? `Walk ${b.walk_number || 1} · ${money(backerCurrentCharge(b, pledgeMiles(b, miles)))} to collect`
+                        : `${money(backerCurrentCharge(b, miles))} so far${b.max_pledge ? ` · up to ${money(b.max_pledge, false)}` : ""}`}
                   </Text>
                 </View>
                 <Text style={styles.rate}>
@@ -100,6 +103,7 @@ export default function Backers() {
                   <Text style={styles.rateUnit}>/mi</Text>
                 </Text>
               </Pressable>
+              </View>
             ))}
           </View>
         )}

@@ -8,7 +8,7 @@ import { Pill } from "../components/Pill";
 import { WalkMap } from "../components/WalkMap";
 import { formatElapsed, formatPace } from "../lib/geo";
 import { MISSION_MILES } from "../lib/config";
-import { backerCurrentCharge, money } from "../lib/data";
+import { backerCurrentCharge, followingThisWalk, money } from "../lib/data";
 import { formatSplit, mileSplits } from "../walk/splits";
 import { getPoints, getWalk } from "../walk/store";
 import { colors, fonts, shadow } from "../theme";
@@ -27,7 +27,7 @@ export default function Replay() {
   const after = r && typeof r.miles_walked === "number" ? r.miles_walked : walker?.miles_walked || r?.distance || 0;
   const before = Math.max(0, after - (r?.distance || 0));
   const splits = useMemo(() => mileSplits(points, before), [points, before]);
-  const earned = backers.filter((b) => !b.collected).reduce((s, b) => s + backerCurrentCharge(b, after) - backerCurrentCharge(b, before), 0);
+  const earned = followingThisWalk(backers).reduce((s, b) => s + backerCurrentCharge(b, after) - backerCurrentCharge(b, before), 0);
   const secs = walk ? Math.round(walk.active_ms / 1000) : 0;
   const pace = r ? formatPace(r.distance, secs) : null;
   const fastest = splits.length ? Math.min(...splits.map((s) => s.seconds / s.fraction)) : 1;

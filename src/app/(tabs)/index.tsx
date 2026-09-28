@@ -9,7 +9,7 @@ import { Pill } from "../../components/Pill";
 import { ProgressRing } from "../../components/ProgressRing";
 import { Avatar, Card, Header, MileLedger, Notice } from "../../components/ui";
 import { MISSION_MILES, SITE_URL } from "../../lib/config";
-import { heroSubtitle, initials, money, pledgeSummary, walkerActivity } from "../../lib/data";
+import { heroSubtitle, initials, money, ordinal, pledgeSummary, walkerActivity, walkNumber } from "../../lib/data";
 import { openWalk } from "../../walk/store";
 import { colors, fonts, shadow } from "../../theme";
 
@@ -69,15 +69,16 @@ export default function Today() {
   const nextMile = Math.min(goal, Math.floor(miles) + 1);
   const pctOfMile = Math.round((miles - Math.floor(miles)) * 100);
 
+  const n = walkNumber(walker);
   const paceLine = done
-    ? "Mission complete. Thank you."
+    ? "Walk complete. Thank you."
     : `${left.toFixed(1)} mi to go · no deadline, walk at your own pace`;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.pad} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         <Header
-          eyebrow={activity.dormant ? "ACCOUNT DORMANT" : done ? "MISSION COMPLETE" : "YOUR WALK"}
+          eyebrow={activity.dormant ? "ACCOUNT DORMANT" : done ? "WALK COMPLETE" : n > 1 ? `YOUR ${ordinal(n).toUpperCase()} WALK` : "YOUR WALK"}
           title="Today"
           right={<Avatar name={initials(walker.name)} photo={walker.photo_url} onPress={() => router.push("/profile")} />}
         />
@@ -118,12 +119,30 @@ export default function Today() {
             Your account has been quiet for over a year. Log a walk to make it active again. Your miles and backers are all still here.
           </Notice>
         ) : null}
-        <Pill
-          label={walking ? "Back to your walk" : done ? "Keep walking" : `Walk mile ${nextMile}`}
-          icon="play"
-          onPress={() => router.navigate("/walk")}
-          style={{ marginTop: 18 }}
-        />
+        {done && !walking ? (
+          /*
+           * Walk again (Baker, 2026-09-28). Thanks first — the walk is done —
+           * then one plain invitation. Nothing starts until they confirm on
+           * the next screen.
+           */
+          <View style={[styles.againCard, shadow.card]}>
+            <Text style={styles.againEyebrow}>{n > 1 ? `YOUR ${ordinal(n).toUpperCase()} WALK IS COMPLETE` : "WALK COMPLETE"}</Text>
+            <Text style={styles.againTitle}>
+              You walked {miles.toFixed(1)} miles{hero ? ` for ${hero.name}` : ""}.
+            </Text>
+            <Text style={styles.againBody}>
+              Every one of those miles is on your record. If you have another {goal} in you, walk again — for {hero ? hero.name.split(" ")[0] : "your hero"} again, or for another hero.
+            </Text>
+            <Pill label="Walk again" icon="arrow" onPress={() => router.push("/walk-again")} style={{ marginTop: 16 }} />
+          </View>
+        ) : (
+          <Pill
+            label={walking ? "Back to your walk" : `Walk mile ${nextMile}`}
+            icon="play"
+            onPress={() => router.navigate("/walk")}
+            style={{ marginTop: 18 }}
+          />
+        )}
 
         {hero ? (
           <Pressable accessibilityRole="button" onPress={() => router.navigate("/hero")} style={[styles.heroCard, shadow.card]}>
@@ -188,5 +207,9 @@ const styles = StyleSheet.create({
   backersRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 16, paddingVertical: 6 },
   backersText: { flex: 1, fontFamily: fonts.semibold, fontSize: 14, color: colors.secondary },
   backersLink: { fontFamily: fonts.bold, fontSize: 14, color: colors.blue, textDecorationLine: "underline" },
+  againCard: { marginTop: 18, borderRadius: 26, backgroundColor: colors.ink, padding: 20 },
+  againEyebrow: { fontFamily: fonts.heavy, fontSize: 11, letterSpacing: 2.2, color: colors.brass },
+  againTitle: { fontFamily: fonts.story, fontSize: 26, lineHeight: 32, color: colors.paper, marginTop: 6 },
+  againBody: { fontFamily: fonts.body, fontSize: 14.5, lineHeight: 21, color: "rgba(244,238,227,0.78)", marginTop: 8 },
   disclaimer: { fontFamily: fonts.body, fontSize: 11.5, lineHeight: 16, color: colors.muted, marginTop: 14 },
 });

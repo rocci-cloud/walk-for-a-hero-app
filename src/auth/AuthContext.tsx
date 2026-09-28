@@ -25,6 +25,10 @@ export type Walker = {
   hero_supported_name?: string;
   photo_url?: string;
   walk_history?: { date: string; miles: number; flagged_for_review?: boolean }[];
+  /** Walk again (2026-09-28): which walk this is, and the walks already finished. */
+  walk_number?: number;
+  current_walk_started_at?: string;
+  completed_walks?: import("../lib/data").CompletedWalk[];
 };
 
 type User = { id: string; email: string; full_name?: string; role?: string };
