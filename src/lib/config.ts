@@ -21,4 +21,5 @@ export const APPLE_SIGNIN_ENABLED = false;
 
 /** The mission, as the website defines it (src/lib/portal.js on the site). */
 export const MISSION_MILES = 15;
-export const WALK_WINDOW_DAYS = 30;
+/** No walk deadline; an account only goes dormant after a year with no walks. */
+export const DORMANT_AFTER_DAYS = 365;

@@ -10,7 +10,7 @@ import { useWalkerData } from "../../auth/WalkerData";
 import { Pill } from "../../components/Pill";
 import { WalkMap } from "../../components/WalkMap";
 import { analyzeOnFoot, formatElapsed, formatPace } from "../../lib/geo";
-import { backerCurrentCharge, money, walkWindow } from "../../lib/data";
+import { backerCurrentCharge, money } from "../../lib/data";
 import { MISSION_MILES } from "../../lib/config";
 import { onWalkUpdated } from "../../walk/locationTask";
 import { WalkError, finishWalk, openSettings, pauseWalk, resumeWalk, sendWalk, startWalk, type SendOutcome } from "../../walk/controller";
@@ -142,7 +142,6 @@ export default function WalkScreen() {
   const status = walk?.status ?? "idle";
   const recording = status === "active";
   const walkingNow = status === "active" || status === "paused";
-  const win = walkWindow(walker?.created_date);
 
   return (
     <View style={styles.root}>
@@ -183,9 +182,6 @@ export default function WalkScreen() {
             ) : (
               <InfoRow icon="lock" title="Lock your phone and pocket it" sub="Tracking keeps running with the screen off. Your route stays private." />
             )}
-            {win.closed ? (
-              <InfoRow icon="info" title="Past your 30-day window" sub="This walk still counts; the Foundation takes a quick look at it." />
-            ) : null}
             {problem && <Problem problem={problem} />}
             <Pill
               label={needsAlways ? "Allow location & start" : "Start walk"}

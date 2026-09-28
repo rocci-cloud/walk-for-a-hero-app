@@ -8,8 +8,8 @@ import { useWalkerData } from "../../auth/WalkerData";
 import { Pill } from "../../components/Pill";
 import { ProgressRing } from "../../components/ProgressRing";
 import { Avatar, Card, Header, MileLedger, Notice } from "../../components/ui";
-import { MISSION_MILES, SITE_URL, WALK_WINDOW_DAYS } from "../../lib/config";
-import { heroSubtitle, initials, money, pledgeSummary, walkWindow } from "../../lib/data";
+import { MISSION_MILES, SITE_URL } from "../../lib/config";
+import { heroSubtitle, initials, money, pledgeSummary, walkerActivity } from "../../lib/data";
 import { openWalk } from "../../walk/store";
 import { colors, fonts, shadow } from "../../theme";
 
@@ -62,7 +62,7 @@ export default function Today() {
 
   const miles = walker.miles_walked || 0;
   const goal = walker.goal_miles || MISSION_MILES;
-  const win = walkWindow(walker.created_date);
+  const activity = walkerActivity(walker);
   const p = pledgeSummary(backers, miles);
   const done = miles >= goal;
   const left = Math.max(0, goal - miles);
@@ -71,15 +71,13 @@ export default function Today() {
 
   const paceLine = done
     ? "Mission complete. Thank you."
-    : win.closed
-      ? `Your 30-day window ended ${win.endsOn?.toLocaleDateString("en-US", { month: "short", day: "numeric" }) ?? ""}.`
-      : `${(left / Math.max(1, win.daysLeft)).toFixed(1)} mi a day finishes on time · ${win.daysLeft} day${win.daysLeft === 1 ? "" : "s"} left`;
+    : `${left.toFixed(1)} mi to go · no deadline, walk at your own pace`;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.pad} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         <Header
-          eyebrow={win.closed ? "WALK WINDOW CLOSED" : `DAY ${win.day} OF ${WALK_WINDOW_DAYS}`}
+          eyebrow={activity.dormant ? "ACCOUNT DORMANT" : done ? "MISSION COMPLETE" : "YOUR WALK"}
           title="Today"
           right={<Avatar name={initials(walker.name)} photo={walker.photo_url} onPress={() => router.push("/profile")} />}
         />
@@ -115,9 +113,9 @@ export default function Today() {
         </View>
         <MileLedger miles={miles} goal={goal} />
 
-        {win.closed && !done ? (
+        {activity.dormant ? (
           <Notice tone="blue">
-            Your 30-day window has ended. You can still walk: miles are counted, and the Foundation takes a quick look at walks logged after day 30.
+            Your account has been quiet for over a year. Log a walk to make it active again. Your miles and backers are all still here.
           </Notice>
         ) : null}
         <Pill

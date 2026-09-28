@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { base44 } from "./base44";
-import { MISSION_MILES, SITE_URL, WALK_WINDOW_DAYS } from "./config";
+import { DORMANT_AFTER_DAYS, MISSION_MILES, SITE_URL } from "./config";
 import type { Walker } from "../auth/AuthContext";
 
 /**
@@ -37,19 +37,22 @@ export type Backer = {
   created_date?: string;
 };
 
-/* ── Walk window (portal.js walkWindowStatus) ───────────────────────── */
+/* ── Activity (portal.js walkerActivityStatus) ──────────────────────── */
 
-export function walkWindow(createdIso?: string) {
-  const started = Date.parse(createdIso || "");
-  if (!started) return { day: 1, daysLeft: WALK_WINDOW_DAYS, closed: false, endsOn: null as Date | null };
-  const elapsed = Math.floor((Date.now() - started) / 86400000);
-  const daysLeft = Math.max(0, WALK_WINDOW_DAYS - elapsed);
-  return {
-    day: Math.min(WALK_WINDOW_DAYS, elapsed + 1),
-    daysLeft,
-    closed: daysLeft <= 0,
-    endsOn: new Date(started + WALK_WINDOW_DAYS * 86400000),
-  };
+/**
+ * No walk deadline. A walker is dormant only after a full year with no walks
+ * (counted from their last walk, or from signup if they have none); walking
+ * again makes them active.
+ */
+export function walkerActivity(walker?: { created_date?: string; walk_history?: { date?: string; voided?: boolean }[] } | null, now = Date.now()) {
+  let latest = Date.parse(walker?.created_date || "") || 0;
+  for (const row of walker?.walk_history || []) {
+    if (row?.voided) continue;
+    const t = Date.parse(row?.date || "") || 0;
+    if (t > latest) latest = t;
+  }
+  const daysSinceActive = latest ? Math.floor((now - latest) / 86400000) : 0;
+  return { daysSinceActive, dormant: daysSinceActive >= DORMANT_AFTER_DAYS };
 }
 
 /* ── Pledges (portal.js backerCurrentCharge) ────────────────────────── */
