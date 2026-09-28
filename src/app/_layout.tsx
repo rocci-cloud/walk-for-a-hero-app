@@ -13,6 +13,7 @@ import {
 } from "@expo-google-fonts/archivo";
 import { Newsreader_500Medium, Newsreader_400Regular_Italic } from "@expo-google-fonts/newsreader";
 import { AuthProvider, useAuth } from "../auth/AuthContext";
+import { WalkerDataProvider } from "../auth/WalkerData";
 import { colors } from "../theme";
 import { applyUpdateNow } from "../lib/appUpdates";
 
@@ -29,16 +30,23 @@ function Gate() {
   if (!ready) return null;
   const signedIn = state.status === "signed_in";
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }}>
-      <Stack.Protected guard={signedIn}>
-        <Stack.Screen name="(tabs)" />
-      </Stack.Protected>
-      <Stack.Protected guard={!signedIn}>
-        <Stack.Screen name="sign-in" />
-      </Stack.Protected>
-      {/* Sign-in return link; reachable signed in or out (see auth.tsx). */}
-      <Stack.Screen name="auth" options={{ animation: "none" }} />
-    </Stack>
+    <WalkerDataProvider>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }}>
+        <Stack.Protected guard={signedIn}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="profile" />
+          <Stack.Screen name="choose-hero" />
+          <Stack.Screen name="invite" />
+          <Stack.Screen name="add-backer" options={{ presentation: "modal" }} />
+        </Stack.Protected>
+        <Stack.Protected guard={!signedIn}>
+          <Stack.Screen name="welcome" />
+          <Stack.Screen name="sign-in" />
+        </Stack.Protected>
+        {/* Sign-in return link; reachable signed in or out (see auth.tsx). */}
+        <Stack.Screen name="auth" options={{ animation: "none" }} />
+      </Stack>
+    </WalkerDataProvider>
   );
 }
 

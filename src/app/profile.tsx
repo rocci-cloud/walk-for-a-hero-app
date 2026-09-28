@@ -3,21 +3,26 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as WebBrowser from "expo-web-browser";
 import Constants from "expo-constants";
-import { useAuth } from "../../auth/AuthContext";
-import { Pill } from "../../components/Pill";
-import { callFunction, functionError } from "../../lib/base44";
-import { SITE_URL } from "../../lib/config";
-import { openWalk } from "../../walk/store";
-import { colors, fonts } from "../../theme";
-import { runningVersion } from "../../lib/appUpdates";
+import { useAuth } from "../auth/AuthContext";
+import { Pill } from "../components/Pill";
+import { callFunction, functionError } from "../lib/base44";
+import { SITE_URL } from "../lib/config";
+import { openWalk } from "../walk/store";
+import { colors, fonts } from "../theme";
+import { router } from "expo-router";
+import { Avatar, Header, Row } from "../components/ui";
+import { useWalkerData } from "../auth/WalkerData";
+import { initials } from "../lib/data";
+import { runningVersion } from "../lib/appUpdates";
 
 /**
  * Account: sign out, and delete the account (Apple App Review 5.1.1(v)
  * requires deletion inside the app). Deletion calls the same delete-account
  * function as the website's "Delete my account" button.
  */
-export default function Account() {
+export default function Profile() {
   const { state, signOut } = useAuth();
+  const { hero } = useWalkerData();
   const [deleting, setDeleting] = useState(false);
   const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState(false);
@@ -61,18 +66,27 @@ export default function Account() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.pad} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Account</Text>
+        <Header back eyebrow="PROFILE" title="You" />
 
         <View style={styles.card}>
-          <Text style={styles.name}>{walker?.name || state.user.full_name || "Walker"}</Text>
-          <Text style={styles.email}>{state.user.email}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+            <Avatar name={initials(walker?.name || state.user.full_name)} photo={walker?.photo_url} size={60} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.name}>{walker?.name || state.user.full_name || "Walker"}</Text>
+              <Text style={styles.email}>{state.user.email}</Text>
+            </View>
+          </View>
           {walker?.slug ? (
-            <Pressable onPress={() => WebBrowser.openBrowserAsync(`${SITE_URL}/walk/${walker.slug}`)} style={{ paddingTop: 10 }}>
-              <Text style={styles.link}>View my walker page</Text>
-            </Pressable>
+            <Row label="My walker page" sub={`walkforahero.com/walk/${walker.slug}`} onPress={() => WebBrowser.openBrowserAsync(`${SITE_URL}/walk/${walker.slug}`)} />
           ) : null}
+          <Row
+            label="Walking for"
+            sub={hero?.name || "No hero chosen yet"}
+            onPress={hero ? () => router.navigate("/hero") : () => router.push("/choose-hero")}
+          />
+          <Row label="Change photo, name or city" sub="On your walkforahero.com dashboard" onPress={() => WebBrowser.openBrowserAsync(`${SITE_URL}/dashboard`)} />
         </View>
 
         <Pill label="Sign out" variant="secondary" onPress={onSignOut} style={{ marginTop: 16 }} />
@@ -131,7 +145,6 @@ export default function Account() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.paper },
   pad: { padding: 20, paddingBottom: 48 },
-  title: { fontFamily: fonts.heavy, fontSize: 28, color: colors.ink, marginTop: 8 },
   card: { backgroundColor: colors.white, borderRadius: 24, padding: 18, marginTop: 16 },
   name: { fontFamily: fonts.story, fontSize: 22, color: colors.ink },
   email: { fontFamily: fonts.body, fontSize: 14, color: colors.secondary, marginTop: 4 },
