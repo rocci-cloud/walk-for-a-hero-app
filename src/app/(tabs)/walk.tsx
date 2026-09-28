@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import * as Haptics from "expo-haptics";
+import * as Location from "expo-location";
 import Svg, { Path } from "react-native-svg";
 import { useAuth } from "../../auth/AuthContext";
 import { useWalkerData } from "../../auth/WalkerData";
@@ -35,6 +36,7 @@ export default function WalkScreen() {
   const [problem, setProblem] = useState<{ message: string; settings?: boolean } | null>(null);
   const [outcome, setOutcome] = useState<SendOutcome | null>(null);
   const [holdHint, setHoldHint] = useState(false);
+  const [needsAlways, setNeedsAlways] = useState(false);
 
   const reload = useCallback(() => {
     const w = openWalk();
@@ -46,6 +48,9 @@ export default function WalkScreen() {
   useFocusEffect(
     useCallback(() => {
       reload();
+      Location.getBackgroundPermissionsAsync()
+        .then((p) => setNeedsAlways(p.status !== "granted"))
+        .catch(() => {});
       const off = onWalkUpdated(reload);
       const tick = setInterval(() => {
         setNow(Date.now());
@@ -95,6 +100,7 @@ export default function WalkScreen() {
       setOutcome(null);
       const email = state.status === "signed_in" ? state.user.email : "";
       await startWalk(email);
+      setNeedsAlways(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     });
 
@@ -168,12 +174,26 @@ export default function WalkScreen() {
               title={hero ? `Walking for ${hero.name}` : "Walking for your hero"}
               sub={`${Math.max(0, goal - before).toFixed(1)} miles to go · ${backers.length} backer${backers.length === 1 ? "" : "s"} following`}
             />
-            <InfoRow icon="lock" title="Lock your phone and pocket it" sub="Tracking keeps running with the screen off. Your route stays private." />
+            {needsAlways ? (
+              <InfoRow
+                icon="pin"
+                title={Platform.OS === "ios" ? "Next, allow location “Always”" : "Next, allow location “All the time”"}
+                sub="So your miles keep counting with the screen locked. Location is only used between Start and Finish, and your route stays private."
+              />
+            ) : (
+              <InfoRow icon="lock" title="Lock your phone and pocket it" sub="Tracking keeps running with the screen off. Your route stays private." />
+            )}
             {win.closed ? (
               <InfoRow icon="info" title="Past your 30-day window" sub="This walk still counts; the Foundation takes a quick look at it." />
             ) : null}
             {problem && <Problem problem={problem} />}
-            <Pill label="Start walk" icon="play" busy={busy === "start"} onPress={onStart} style={{ marginTop: 14 }} />
+            <Pill
+              label={needsAlways ? "Allow location & start" : "Start walk"}
+              icon="play"
+              busy={busy === "start"}
+              onPress={onStart}
+              style={{ marginTop: 14 }}
+            />
             {recent.length > 0 && (
               <View style={{ marginTop: 16 }}>
                 <Text style={styles.label}>RECENT WALKS</Text>
@@ -338,13 +358,14 @@ function Tile({ label, value }: { label: string; value: string }) {
   );
 }
 
-function InfoRow({ icon, title, sub }: { icon: "star" | "lock" | "info"; title: string; sub: string }) {
+function InfoRow({ icon, title, sub }: { icon: "star" | "lock" | "info" | "pin"; title: string; sub: string }) {
   return (
     <View style={styles.info}>
       <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={colors.red} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
         {icon === "star" && <Path d="M12 3l2.7 5.6 6.1.7-4.5 4.2 1.2 6.1L12 16.6l-5.5 3 1.2-6.1-4.5-4.2 6.1-.7z" />}
         {icon === "lock" && <Path d="M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 017 0v3" />}
         {icon === "info" && <Path d="M12 3a9 9 0 100 18 9 9 0 000-18zM12 11v5M12 7.5v.5" />}
+        {icon === "pin" && <Path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0113 0c0 5.4-6.5 11-6.5 11zM12 12.3a2.3 2.3 0 100-4.6 2.3 2.3 0 000 4.6z" />}
       </Svg>
       <View style={{ flex: 1 }}>
         <Text style={styles.infoTitle}>{title}</Text>
