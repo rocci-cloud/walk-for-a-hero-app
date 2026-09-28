@@ -8,7 +8,7 @@ The walker app for [walkforahero.com](https://walkforahero.com). iPhone and Andr
 2. **A real GPS walk** with the phone locked in a pocket, credited by the same `log-walk-miles` function the website uses.
 3. **The map**: free MapLibre + OpenFreeMap, with the brass-to-red route.
 
-It has three tabs: **Today** (miles, raised, days left), **Walk** (map, start/pause/finish), and **Account** (sign out, delete account).
+The v3 app: four tabs, **Today** (ring, pledged vs raised, mile ledger, hero), **Walk** (night map, live sheet, press-and-hold Finish), **Backers** (the website's Backer records, invite through the share menu, log a pledge) and **Hero** (photo, story, raised total, Give on walkforahero.com). Profile sits behind the avatar. After a walk: **Walk credited** (worded from the server's answer), **Replay** with mile splits, and **Route art** (route shape only, no map or street names) shared through the phone's share menu.
 
 ## How it connects to the website
 
@@ -72,9 +72,9 @@ Do this on one iPhone and one Android phone:
 
 ## Before the store
 
-- Replace the template icons in `assets/` with the Foundation's vector logo (icon 1024×1024, adaptive icon layers, splash).
+- The icon, adaptive icon and splash are built from the Foundation emblem (`assets/brand/emblem.png`, 246 px). They are sharp at phone sizes; for the 512 px store listing icon, replace them with the vector logo.
 - Confirm the bundle ID `com.walkforahero.app` with the Foundation's Apple/Google accounts **before the first upload**. It can never change after that.
 - Turn on `APPLE_SIGNIN_ENABLED` in `src/lib/config.ts` (and the website's flag) once Apple is enabled in Base44.
-- Still to build: the full v3 screens (onboarding, backers, invites, hero, replay, route art), push notifications (`register-push-token` is ready on the server), live sharing, Wallet card, and Live Activities.
+- Still to build: push notifications (`register-push-token` is ready on the server; needs the Foundation's Firebase project for Android), changing the walker photo in the app (`set-walker-photo`), live sharing, the Wallet card and Live Activities.
 
 © Walk For A Hero Foundation. All rights reserved.

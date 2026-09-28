@@ -95,7 +95,13 @@ export default function Replay() {
           {pace ? ` · ${pace.replace(" /mi", "")} average` : ""}.
         </Text>
 
-        <Pill label="Done" variant="secondary" onPress={() => router.back()} style={{ marginTop: 20 }} />
+        <Pill
+          label="Share route art"
+          icon="arrow"
+          onPress={() => walk && router.push({ pathname: "/route-art", params: { id: walk.id } })}
+          style={{ marginTop: 20 }}
+        />
+        <Pill label="Done" variant="secondary" onPress={() => router.back()} style={{ marginTop: 10 }} />
       </ScrollView>
     </View>
   );

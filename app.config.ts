@@ -18,7 +18,7 @@ const config: ExpoConfig = {
   name: IS_DEV ? "WFAH (dev)" : "Walk For A Hero",
   slug: "walk-for-a-hero",
   scheme: "walkforahero",
-  version: "0.1.0",
+  version: "0.2.0",
   orientation: "portrait",
   icon: "./assets/icon.png",
   userInterfaceStyle: "light",
@@ -48,6 +48,9 @@ const config: ExpoConfig = {
       "FOREGROUND_SERVICE",
       "FOREGROUND_SERVICE_LOCATION",
     ],
+    // Route art is written to the app's own cache and handed to the share
+    // menu, so no storage access is needed (and Google Play restricts it).
+    blockedPermissions: ["android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE"],
   },
   plugins: [
     "expo-router",
@@ -57,6 +60,7 @@ const config: ExpoConfig = {
     "expo-web-browser",
     "expo-font",
     "@maplibre/maplibre-react-native",
+    "expo-sharing",
     [
       "expo-splash-screen",
       { image: "./assets/splash-icon.png", imageWidth: 180, backgroundColor: "#F4EEE3" },

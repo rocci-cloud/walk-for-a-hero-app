@@ -40,6 +40,7 @@ function Gate() {
           <Stack.Screen name="add-backer" options={{ presentation: "modal" }} />
           <Stack.Screen name="walk-result" options={{ contentStyle: { backgroundColor: colors.ink }, gestureEnabled: false }} />
           <Stack.Screen name="replay" options={{ contentStyle: { backgroundColor: colors.ink } }} />
+          <Stack.Screen name="route-art" />
         </Stack.Protected>
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="welcome" />
