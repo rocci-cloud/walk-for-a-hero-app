@@ -151,3 +151,24 @@ test("the app only accepts a callback carrying ITS state and a well-formed code"
   assert.deepEqual(parseAuthCallback(`walkforahero://auth?code=${code}&state=someone-elses-state`, "abcdefghijklmnop"), { error: "state_mismatch" });
   assert.deepEqual(parseAuthCallback(`walkforahero://auth?code=short&state=abcdefghijklmnop`, "abcdefghijklmnop"), { error: "bad_code" });
 });
+
+import { mileSplits } from "../src/walk/splits";
+
+test("mile splits follow mission miles, not walk miles", () => {
+  // 3.0 mi due north at 9:00/mi, starting at mission mile 6.4
+  const t0 = Date.parse("2026-09-28T10:00:00Z");
+  const pts = Array.from({ length: 61 }, (_, i) => ({ lat: 28 + (i * 0.05) / 69.05, lng: -82, t: new Date(t0 + i * 27000).toISOString(), acc: 5 }));
+  const s = mileSplits(pts, 6.4);
+  assert.deepEqual(s.map((x) => x.mile), [7, 8, 9, 10]);
+  assert.deepEqual(s.map((x) => +x.fraction.toFixed(2)), [0.6, 1, 1, 0.4]);
+  assert.ok(Math.abs(s[1].seconds - 540) < 3);
+});
+
+test("a gap adds neither distance nor time", () => {
+  const t0 = Date.parse("2026-09-28T10:00:00Z");
+  const pts: any[] = Array.from({ length: 21 }, (_, i) => ({ lat: 28 + (i * 0.05) / 69.05, lng: -82, t: new Date(t0 + i * 27000).toISOString(), acc: 5 }));
+  pts[10] = { ...pts[10], gap: true, t: new Date(t0 + 10 * 27000 + 3600000).toISOString() };
+  for (let i = 11; i < 21; i++) pts[i].t = new Date(Date.parse(pts[i].t) + 3600000).toISOString();
+  const total = mileSplits(pts, 0).reduce((a, x) => a + x.fraction, 0);
+  assert.ok(Math.abs(total - 0.95) < 0.01);
+});

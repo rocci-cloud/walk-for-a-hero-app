@@ -5,7 +5,7 @@ import { colors, fonts, shadow } from "../theme";
 type Props = {
   label: string;
   onPress: () => void;
-  variant?: "primary" | "secondary" | "dark";
+  variant?: "primary" | "secondary" | "dark" | "light";
   icon?: "play" | "arrow" | "pause" | "stop" | null;
   busy?: boolean;
   disabled?: boolean;
@@ -17,7 +17,8 @@ type Props = {
 export function Pill({ label, onPress, variant = "primary", icon = null, busy, disabled, style, accessibilityHint }: Props) {
   const primary = variant === "primary";
   const dark = variant === "dark";
-  const fg = primary || dark ? colors.white : colors.ink;
+  const light = variant === "light"; // outline for dark screens
+  const fg = primary || dark || light ? colors.white : colors.ink;
   return (
     <Pressable
       accessibilityRole="button"
@@ -31,6 +32,7 @@ export function Pill({ label, onPress, variant = "primary", icon = null, busy, d
         primary && [styles.primary, shadow.red],
         dark && styles.dark,
         variant === "secondary" && styles.secondary,
+        light && styles.light,
         icon ? styles.withIcon : styles.centered,
         (disabled || busy) && { opacity: 0.55 },
         pressed && { transform: [{ scale: 0.98 }] },
@@ -43,7 +45,7 @@ export function Pill({ label, onPress, variant = "primary", icon = null, busy, d
           <ActivityIndicator color={fg} />
         </View>
       ) : icon ? (
-        <View style={[styles.iconWrap, !primary && !dark && { backgroundColor: "rgba(17,26,58,0.08)" }]}>
+        <View style={[styles.iconWrap, variant === "secondary" && { backgroundColor: "rgba(17,26,58,0.08)" }]}>
           <Svg width={16} height={16} viewBox="0 0 24 24">
             {icon === "play" && <Path d="M8 5.5v13l11-6.5z" fill={fg} />}
             {icon === "arrow" && <Path d="M5 12h14M13 6l6 6-6 6" stroke={fg} strokeWidth={2.2} fill="none" strokeLinecap="round" strokeLinejoin="round" />}
@@ -63,6 +65,7 @@ const styles = StyleSheet.create({
   primary: { backgroundColor: colors.red },
   dark: { backgroundColor: colors.ink },
   secondary: { borderWidth: 1.5, borderColor: colors.ink },
+  light: { borderWidth: 1.5, borderColor: "rgba(244,238,227,0.6)" },
   label: { fontFamily: fonts.heavy, fontSize: 17 },
   iconWrap: {
     width: 44,

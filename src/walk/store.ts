@@ -220,3 +220,12 @@ export function walkingSeconds(w: WalkRow, nowMs: number) {
   const live = w.active_since ? Math.max(0, nowMs - w.active_since) : 0;
   return Math.round((w.active_ms + live) / 1000);
 }
+
+/** Recently credited walks still on this phone (newest first), for replays. */
+export function recentDone(limit = 5): WalkRow[] {
+  const rows = database().getAllSync(
+    "SELECT * FROM walks WHERE status = 'done' ORDER BY created_ms DESC LIMIT ?",
+    [limit],
+  );
+  return rows.map(rowToWalk);
+}

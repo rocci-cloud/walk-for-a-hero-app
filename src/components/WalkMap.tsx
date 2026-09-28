@@ -30,7 +30,19 @@ function toSegments(points: PathPoint[]) {
   return segs;
 }
 
-export function WalkMap({ points, following = true }: { points: PathPoint[]; following?: boolean }) {
+export function WalkMap({
+  points,
+  following = true,
+  bottomInset = 0,
+  fitRoute = false,
+}: {
+  points: PathPoint[];
+  following?: boolean;
+  /** Height covered by a bottom sheet, so the walker's dot stays in view above it. */
+  bottomInset?: number;
+  /** Frame the whole route instead of following the walker (replay). */
+  fitRoute?: boolean;
+}) {
   const data = useMemo<GeoJSON.FeatureCollection>(() => {
     const segs = toSegments(points);
     return {
@@ -45,6 +57,16 @@ export function WalkMap({ points, following = true }: { points: PathPoint[]; fol
   }, [points]);
 
   const last = points[points.length - 1];
+  const bounds = useMemo(() => {
+    if (!fitRoute || points.length < 2) return null;
+    let w = Infinity, so = Infinity, e = -Infinity, n = -Infinity;
+    for (const p of points) {
+      w = Math.min(w, p.lng); e = Math.max(e, p.lng);
+      so = Math.min(so, p.lat); n = Math.max(n, p.lat);
+    }
+    return [w, so, e, n] as [number, number, number, number];
+  }, [fitRoute, points]);
+  const padding = { top: 90, left: 40, right: 40, bottom: bottomInset + 30 };
 
   return (
     <View style={styles.wrap}>
@@ -56,12 +78,17 @@ export function WalkMap({ points, following = true }: { points: PathPoint[]; fol
         attribution
         attributionPosition={{ bottom: 8, right: 8 }}
       >
-        <Camera
-          trackUserLocation={following ? "course" : undefined}
-          initialViewState={last ? { center: [last.lng, last.lat], zoom: 16 } : { zoom: 3, center: [-82.46, 27.95] }}
-          zoom={16}
-          pitch={following ? 45 : 0}
-        />
+        {bounds ? (
+          <Camera bounds={bounds} padding={padding} pitch={40} duration={0} />
+        ) : (
+          <Camera
+            trackUserLocation={following ? "course" : undefined}
+            initialViewState={last ? { center: [last.lng, last.lat], zoom: 16 } : { zoom: 3, center: [-82.46, 27.95] }}
+            zoom={16}
+            pitch={following ? 45 : 0}
+            padding={{ bottom: bottomInset }}
+          />
+        )}
         <GeoJSONSource id="route" data={data} lineMetrics>
           <Layer
             id="route-glow"
@@ -79,7 +106,7 @@ export function WalkMap({ points, following = true }: { points: PathPoint[]; fol
             }}
           />
         </GeoJSONSource>
-        <UserLocation accuracy heading />
+        {!fitRoute && <UserLocation accuracy heading />}
       </Map>
     </View>
   );
