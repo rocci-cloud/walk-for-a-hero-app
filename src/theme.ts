@@ -8,6 +8,7 @@ export const colors = {
   blue: "#1B2C8F", // royal blue: structure, the star
   brass: "#C9A04C", // milestones, route start
   brassText: "#8A6424", // brass for text on paper
+  money: "#2E7D4F", // money raised — green, never red (website rule)
   paper: "#F4EEE3",
   paperDeep: "#E9E1D2",
   ink: "#111A3A", // text, night map

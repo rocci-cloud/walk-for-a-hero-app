@@ -3,9 +3,9 @@ import { Image, RefreshControl, ScrollView, StyleSheet, Text, View } from "react
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
-import Svg, { Path } from "react-native-svg";
 import { useWalkerData } from "../../auth/WalkerData";
 import { Pill } from "../../components/Pill";
+import { HeroPhoto } from "../../components/HeroPhoto";
 import { Card, emblem } from "../../components/ui";
 import { links, money } from "../../lib/data";
 import { colors, fonts, shadow } from "../../theme";
@@ -54,13 +54,7 @@ export default function HeroTab() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.white} />}
     >
       <View style={[styles.photoWrap, { height: 340 + insets.top }]}>
-        {hero.photo_url ? (
-          <Image source={{ uri: hero.photo_url }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityLabel={`Photo of ${hero.name}`} />
-        ) : (
-          <Svg width="100%" height="100%" viewBox="0 0 390 360" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
-            <Path d="M-20 320 L420 170 M-20 270 L420 120" stroke="#FFFFFF" strokeOpacity={0.06} strokeWidth={20} />
-          </Svg>
-        )}
+        <HeroPhoto uri={hero.photo_url} name={hero.name} style={StyleSheet.absoluteFill} textSize={96} />
       </View>
 
       <View style={styles.sheet}>
@@ -89,7 +83,7 @@ export default function HeroTab() {
           onPress={() => WebBrowser.openBrowserAsync(links.giveToHero(hero))}
           style={{ marginTop: 16 }}
         />
-        <Text style={styles.fine}>100% of every dollar designated to a hero’s campaign funds that hero’s package. Secure checkout on walkforahero.com.</Text>
+        <Text style={styles.fine}>100% of every gift designated to a hero funds that hero’s package. Card processing fees are the one deduction, taken by the processor, not by us. Secure checkout on walkforahero.com.</Text>
 
         {story ? (
           <>

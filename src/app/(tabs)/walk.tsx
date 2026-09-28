@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import * as Haptics from "expo-haptics";
@@ -8,6 +8,7 @@ import Svg, { Path } from "react-native-svg";
 import { useAuth } from "../../auth/AuthContext";
 import { useWalkerData } from "../../auth/WalkerData";
 import { Pill } from "../../components/Pill";
+import { HeroPhoto } from "../../components/HeroPhoto";
 import { WalkMap } from "../../components/WalkMap";
 import { analyzeOnFoot, formatElapsed, formatPace } from "../../lib/geo";
 import { backerCurrentCharge, followingThisWalk, money } from "../../lib/data";
@@ -154,7 +155,7 @@ export default function WalkScreen() {
         </View>
         {hero ? (
           <View style={styles.chip}>
-            {hero.photo_url ? <Image source={{ uri: hero.photo_url }} style={styles.chipPhoto} /> : null}
+            <HeroPhoto uri={hero.photo_url} name={hero.name} style={styles.chipPhoto} textSize={11} />
             <Text style={styles.chipText}>For {hero.name.split(" ")[0]}</Text>
           </View>
         ) : null}

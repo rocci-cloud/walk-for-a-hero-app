@@ -45,13 +45,13 @@ export default function Backers() {
 
         <Card style={{ marginTop: 18 }}>
           <Text style={styles.label}>RAISED · MONEY IN HAND</Text>
-          <Text style={styles.big}>{money(walker.total_raised)}</Text>
+          <Text style={[styles.big, { color: colors.money }]}>{money(walker.total_raised)}</Text>
           <Text style={styles.sub}>Collected pledges and direct gifts</Text>
           <View style={styles.rule} />
           <View style={{ flexDirection: "row" }}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.label}>PLEDGED, TO COLLECT</Text>
-              <Text style={[styles.mid, { color: colors.red }]}>{money(p.pledgedToCollect)}</Text>
+              <Text style={styles.label}>TO COLLECT</Text>
+              <Text style={styles.mid}>{money(p.pledgedToCollect)}</Text>
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.label}>PER MILE</Text>

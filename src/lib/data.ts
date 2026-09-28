@@ -168,19 +168,19 @@ export const links = {
   backerPortal: (b: Backer) => `${SITE_URL}/portal/backer/${b.id}`,
 };
 
-/** portal.js inviteMessageTemplates, word for word. */
+/** portal.js inviteMessageTemplates, word for word (both updated 2026-09-28). */
 export function inviteTemplates(walkerName: string, heroName: string, link: string) {
   const heroLine = heroName ? ` for ${heroName}` : "";
   return [
     {
       id: "direct",
       label: "Direct ask",
-      text: `I need your help. I'm walking for Walk For A Hero${heroLine} — every mile I walk funds real medical technology that lets a veteran stand and walk again. Can you pledge $1–$5 per mile? Takes 30 seconds: ${link}`,
+      text: `I need your help. I'm walking 15 miles with Walk For A Hero${heroLine} — every mile funds an exoskeleton that lets a paralyzed veteran stand and walk again. Would you back me at $1–$5 a mile? Reply with a number and I'll add you, or give once here: ${link}`,
     },
     {
       id: "casual",
       label: "Casual",
-      text: `Hey! I'm walking 15 miles${heroLine} to help fund a life-changing exoskeleton for a paralyzed veteran. Would you back me a few bucks per mile? ${link}`,
+      text: `Hey! I'm walking 15 miles${heroLine} to help fund a life-changing exoskeleton for a paralyzed veteran. Would you back me a few bucks a mile? Reply with a number and I'll add you, or give once here: ${link}`,
     },
     {
       id: "milestone",
@@ -198,13 +198,12 @@ export const money = (n?: number, cents = true) =>
     maximumFractionDigits: cents ? 2 : 0,
   })}`;
 
-export const initials = (name?: string) =>
-  (name || "")
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((p) => p[0]!.toUpperCase())
-    .join("") || "W";
+/** First and last name initials; titles and middle initials ("Sgt.", "L.") are skipped. */
+export const initials = (name?: string) => {
+  const parts = (name || "").split(/\s+/).filter((p) => p && !p.endsWith("."));
+  const pick = parts.length > 2 ? [parts[0], parts[parts.length - 1]] : parts.slice(0, 2);
+  return pick.map((p) => p[0]!.toUpperCase()).join("") || "W";
+};
 
 export function heroSubtitle(h?: Hero | null) {
   if (!h) return "";

@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
@@ -8,6 +8,7 @@ import { useWalkerData } from "../../auth/WalkerData";
 import { Pill } from "../../components/Pill";
 import { ProgressRing } from "../../components/ProgressRing";
 import { Avatar, Card, Header, MileLedger, Notice } from "../../components/ui";
+import { HeroPhoto } from "../../components/HeroPhoto";
 import { MISSION_MILES, SITE_URL } from "../../lib/config";
 import { heroSubtitle, initials, money, ordinal, pledgeSummary, walkerActivity, walkNumber } from "../../lib/data";
 import { openWalk } from "../../walk/store";
@@ -72,7 +73,7 @@ export default function Today() {
   const n = walkNumber(walker);
   const paceLine = done
     ? "Walk complete. Thank you."
-    : `${left.toFixed(1)} mi to go · no deadline, walk at your own pace`;
+    : `${left.toFixed(1)} miles to go · at your own pace`;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -92,14 +93,14 @@ export default function Today() {
             <View style={{ flex: 1, gap: 10 }}>
               <View>
                 <Text style={styles.statLabel}>PLEDGED</Text>
-                <Text style={[styles.statBig, { color: colors.red }]} adjustsFontSizeToFit numberOfLines={1}>
+                <Text style={styles.statBig} adjustsFontSizeToFit numberOfLines={1}>
                   {money(p.pledgedToCollect)}
                 </Text>
               </View>
               <View style={styles.rule} />
               <View>
                 <Text style={styles.statLabel}>RAISED</Text>
-                <Text style={styles.statBig} adjustsFontSizeToFit numberOfLines={1}>
+                <Text style={[styles.statBig, { color: colors.money }]} adjustsFontSizeToFit numberOfLines={1}>
                   {money(walker.total_raised)}
                 </Text>
               </View>
@@ -146,9 +147,7 @@ export default function Today() {
 
         {hero ? (
           <Pressable accessibilityRole="button" onPress={() => router.navigate("/hero")} style={[styles.heroCard, shadow.card]}>
-            <View style={styles.heroPhotoWrap}>
-              {hero.photo_url ? <Image source={{ uri: hero.photo_url }} style={styles.heroPhoto} /> : null}
-            </View>
+            <HeroPhoto uri={hero.photo_url} name={hero.name} style={styles.heroPhotoWrap} textSize={30} />
             <View style={styles.heroText}>
               <Text style={styles.heroEyebrow}>WALKING FOR</Text>
               <Text style={styles.heroName} numberOfLines={1} adjustsFontSizeToFit>

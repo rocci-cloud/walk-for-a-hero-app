@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useWalkerData } from "../auth/WalkerData";
 import { Pill } from "../components/Pill";
+import { HeroPhoto } from "../components/HeroPhoto";
 import { Header } from "../components/ui";
 import {
   checkWalkAgain,
@@ -117,7 +118,7 @@ export default function WalkAgain() {
                   onPress={() => setPicked(h.id)}
                   style={[styles.card, shadow.card, on && styles.cardOn]}
                 >
-                  <View style={styles.photo}>{h.photo_url ? <Image source={{ uri: h.photo_url }} style={StyleSheet.absoluteFill} /> : null}</View>
+                  <HeroPhoto uri={h.photo_url} name={h.name} style={styles.photo} textSize={28} />
                   <View style={styles.cardText}>
                     {h.id === snap.heroId ? <Text style={styles.badge}>YOUR HERO</Text> : null}
                     <Text style={styles.name} numberOfLines={1} adjustsFontSizeToFit>

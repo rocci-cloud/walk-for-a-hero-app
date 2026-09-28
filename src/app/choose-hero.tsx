@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useWalkerData } from "../auth/WalkerData";
 import { Pill } from "../components/Pill";
+import { HeroPhoto } from "../components/HeroPhoto";
 import { Header } from "../components/ui";
 import { base44 } from "../lib/base44";
 import { heroSubtitle, listHeroes, money, type Hero } from "../lib/data";
@@ -67,7 +68,7 @@ export default function ChooseHero() {
               onPress={() => setPicked(h.id)}
               style={[styles.card, shadow.card, on && styles.cardOn]}
             >
-              <View style={styles.photo}>{h.photo_url ? <Image source={{ uri: h.photo_url }} style={StyleSheet.absoluteFill} /> : null}</View>
+              <HeroPhoto uri={h.photo_url} name={h.name} style={styles.photo} textSize={56} />
               <View style={{ padding: 16 }}>
                 {h.is_anchor ? <Text style={styles.badge}>FOUNDING HERO</Text> : null}
                 <Text style={styles.name}>{h.name}</Text>
@@ -107,7 +108,7 @@ const styles = StyleSheet.create({
   body: { fontFamily: fonts.body, fontSize: 15, lineHeight: 22, color: colors.secondary, marginTop: 14 },
   card: { marginTop: 18, borderRadius: 26, backgroundColor: colors.white, overflow: "hidden", borderWidth: 2, borderColor: "transparent" },
   cardOn: { borderColor: colors.red },
-  photo: { height: 180, backgroundColor: colors.blue },
+  photo: { height: 150 },
   badge: { alignSelf: "flex-start", fontFamily: fonts.heavy, fontSize: 10, letterSpacing: 1.6, color: colors.ink, backgroundColor: colors.brass, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, overflow: "hidden", marginBottom: 8 },
   name: { fontFamily: fonts.story, fontSize: 26, color: colors.ink },
   sub: { fontFamily: fonts.body, fontSize: 14, color: colors.secondary, marginTop: 2 },

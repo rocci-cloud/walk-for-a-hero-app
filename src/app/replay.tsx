@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   close: { width: 44, height: 44, borderRadius: 22, backgroundColor: "rgba(11,16,36,0.75)", alignItems: "center", justifyContent: "center" },
   sheet: { flex: 1, marginTop: -30, backgroundColor: colors.paper, borderTopLeftRadius: 30, borderTopRightRadius: 30 },
   label: { fontFamily: fonts.heavy, fontSize: 11, letterSpacing: 2.2, color: colors.brassText },
-  earned: { fontFamily: fonts.black, fontSize: 36, color: colors.red, fontVariant: ["tabular-nums"] },
+  earned: { fontFamily: fonts.black, fontSize: 36, color: colors.ink, fontVariant: ["tabular-nums"] },
   small: { fontFamily: fonts.body, fontSize: 12.5, lineHeight: 18, color: colors.secondary, marginTop: 6 },
   mission: { fontFamily: fonts.heavy, fontSize: 15, color: colors.ink, marginTop: 2 },
   split: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 10 },

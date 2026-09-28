@@ -16,7 +16,6 @@ import { Pill } from "../components/Pill";
 import { APPLE_SIGNIN_ENABLED, SITE_URL } from "../lib/config";
 import { signInWithEmail, signInWithProvider, SignInError } from "../lib/session";
 import { colors, fonts } from "../theme";
-import { runningVersion } from "../lib/appUpdates";
 
 export default function SignIn() {
   const { signedIn } = useAuth();
@@ -55,8 +54,14 @@ export default function SignIn() {
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <Text style={styles.eyebrow}>WALK FOR A HERO</Text>
-          <Text style={styles.h1}>Walk 15 miles so a veteran can walk again.</Text>
+          <Text style={styles.h1}>Welcome back.</Text>
           <Text style={styles.lede}>Sign in with the same account you use on walkforahero.com.</Text>
+
+          {APPLE_SIGNIN_ENABLED && (
+            <Pill label="Continue with Apple" variant="dark" busy={busy === "apple"} disabled={!!busy} onPress={() => run("apple")} style={{ marginTop: 24 }} />
+          )}
+          <Pill label="Continue with Google" variant="secondary" busy={busy === "google"} disabled={!!busy} onPress={() => run("google")} style={{ marginTop: APPLE_SIGNIN_ENABLED ? 10 : 24 }} />
+          <Text style={styles.or}>or with email</Text>
 
           <View style={styles.card}>
             <Text style={styles.label}>Email</Text>
@@ -93,16 +98,9 @@ export default function SignIn() {
             </Pressable>
           </View>
 
-          <Text style={styles.or}>or</Text>
-          <Pill label="Continue with Google" variant="secondary" busy={busy === "google"} disabled={!!busy} onPress={() => run("google")} />
-          {APPLE_SIGNIN_ENABLED && (
-            <Pill label="Continue with Apple" variant="dark" busy={busy === "apple"} disabled={!!busy} onPress={() => run("apple")} style={{ marginTop: 10 }} />
-          )}
-
           <Pressable onPress={() => WebBrowser.openBrowserAsync(`${SITE_URL}/become-a-walker`)} style={[styles.linkRow, { marginTop: 22 }]}>
             <Text style={styles.link}>New here? Become a walker at walkforahero.com</Text>
           </Pressable>
-          <Text style={styles.version}>{runningVersion()}</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -115,7 +113,7 @@ const styles = StyleSheet.create({
   eyebrow: { fontFamily: fonts.heavy, fontSize: 12, letterSpacing: 2.4, color: colors.brassText, marginTop: 24 },
   h1: { fontFamily: fonts.story, fontSize: 32, lineHeight: 36, color: colors.ink, marginTop: 10 },
   lede: { fontFamily: fonts.body, fontSize: 15, lineHeight: 22, color: colors.secondary, marginTop: 10 },
-  card: { backgroundColor: colors.white, borderRadius: 26, padding: 18, marginTop: 24 },
+  card: { backgroundColor: colors.white, borderRadius: 26, padding: 18 },
   label: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink },
   input: {
     marginTop: 6,
@@ -133,6 +131,5 @@ const styles = StyleSheet.create({
   linkRow: { paddingVertical: 12, alignItems: "center" },
   link: { fontFamily: fonts.semibold, fontSize: 14, color: colors.blue, textDecorationLine: "underline" },
   detail: { fontFamily: fonts.body, color: colors.muted, marginTop: 6, fontSize: 11, lineHeight: 15 },
-  version: { textAlign: "center", fontFamily: fonts.body, fontSize: 11, color: colors.muted, marginTop: 8 },
   or: { textAlign: "center", fontFamily: fonts.semibold, color: colors.muted, marginVertical: 14 },
 });
