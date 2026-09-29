@@ -6,7 +6,7 @@ import { useWalkerData } from "../auth/WalkerData";
 import { Pill } from "../components/Pill";
 import { Card, Header } from "../components/ui";
 import { inviteTemplates, links } from "../lib/data";
-import { colors, fonts } from "../theme";
+import { colors, fonts, type } from "../theme";
 
 /**
  * Invite a backer — the same three messages as the website's Invite dialog,
@@ -29,7 +29,7 @@ export default function Invite() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.pad}>
-        <Header back eyebrow="INVITE" title="Invite a backer" />
+        <Header back eyebrow="Invite" title="Invite a backer" />
         <Text style={styles.body}>Pick a message. It opens your phone’s share menu, so you can text it, email it, post it or copy it.</Text>
 
         <View style={styles.chips}>
@@ -50,7 +50,7 @@ export default function Invite() {
           <Text style={styles.preview}>{chosen.text}</Text>
         </Card>
 
-        <Text style={styles.linkLabel}>YOUR LINK</Text>
+        <Text style={styles.linkLabel}>Your link</Text>
         <Text style={styles.linkText} selectable>
           {link.replace(/^https:\/\//, "")}
         </Text>
@@ -65,12 +65,12 @@ export default function Invite() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.paper },
   pad: { padding: 20, paddingBottom: 40 },
-  body: { fontFamily: fonts.body, fontSize: 15, lineHeight: 22, color: colors.secondary, marginTop: 14 },
+  body: { ...type.body, marginTop: 14 },
   chips: { flexDirection: "row", gap: 8, marginTop: 16 },
   chip: { flex: 1, borderRadius: 999, borderWidth: 1.5, borderColor: colors.ink, paddingVertical: 10, alignItems: "center" },
   chipOn: { backgroundColor: colors.ink },
   chipText: { fontFamily: fonts.bold, fontSize: 13.5, color: colors.ink },
-  preview: { fontFamily: fonts.body, fontSize: 15.5, lineHeight: 23, color: colors.ink },
-  linkLabel: { fontFamily: fonts.heavy, fontSize: 11, letterSpacing: 1.8, color: colors.muted, marginTop: 20 },
+  preview: { ...type.body, color: colors.ink },
+  linkLabel: { ...type.kicker, marginTop: 20 },
   linkText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.blue, marginTop: 4 },
 });

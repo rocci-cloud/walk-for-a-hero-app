@@ -8,7 +8,8 @@ import { Pill } from "../../components/Pill";
 import { HeroPhoto } from "../../components/HeroPhoto";
 import { Card, emblem } from "../../components/ui";
 import { links, money } from "../../lib/data";
-import { colors, fonts, shadow } from "../../theme";
+import { colors, shadow , type } from "../../theme";
+import { CountUp } from "../../components/motion";
 
 /**
  * The walker's hero (v3 "Hero" board). The raised figure is the hero's
@@ -30,7 +31,7 @@ export default function HeroTab() {
   if (!hero) {
     return (
       <View style={[styles.safe, { paddingTop: insets.top + 24, paddingHorizontal: 20 }]}>
-        <Text style={styles.eyebrow}>YOUR HERO</Text>
+        <Text style={styles.eyebrow}>Your hero</Text>
         <Text style={styles.name}>{loaded ? "Choose your hero" : " "}</Text>
         {loaded && (
           <>
@@ -61,16 +62,16 @@ export default function HeroTab() {
         <View style={[styles.emblemWrap, shadow.card]}>
           <Image source={emblem} style={{ width: 78, height: 78 }} />
         </View>
-        <Text style={styles.eyebrow}>{hero.is_anchor ? "FOUNDING HERO" : "YOUR HERO"}</Text>
+        <Text style={styles.eyebrow}>{hero.is_anchor ? "Founding hero" : "Your hero"}</Text>
         <Text style={styles.name}>{hero.name}</Text>
         <Text style={styles.sub}>{[hero.conflict, hero.branch].filter(Boolean).join(" · ")}</Text>
 
         <Card style={{ marginTop: 18 }}>
           <View style={styles.raisedHead}>
-            <Text style={styles.raisedLabel}>RAISED FOR {hero.name.split(" ")[0].toUpperCase()}</Text>
+            <Text style={styles.raisedLabel}>Raised for {hero.name.split(" ")[0]}</Text>
             <Text style={styles.raisedOf}>of {money(goal, false)}</Text>
           </View>
-          <Text style={styles.raised}>{money(raised, false)}</Text>
+          <CountUp value={raised} format={(n) => money(n, false)} style={styles.raised} />
           <View style={styles.track}>
             <View style={[styles.fill, { width: `${Math.max(pct * 100, raised > 0 ? 2 : 0)}%` }]} />
           </View>
@@ -87,7 +88,7 @@ export default function HeroTab() {
 
         {story ? (
           <>
-            <Text style={[styles.eyebrow, { marginTop: 26 }]}>{hero.name.split(" ")[0].toUpperCase()}’S STORY</Text>
+            <Text style={[styles.eyebrow, { marginTop: 26 }]}>{hero.name.split(" ")[0]}’s story</Text>
             {story.split(/\n\s*\n/).map((para, i) => (
               <Text key={i} style={styles.story}>
                 {para.trim()}
@@ -124,16 +125,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  eyebrow: { fontFamily: fonts.heavy, fontSize: 11, letterSpacing: 2.4, color: colors.brassText },
-  name: { fontFamily: fonts.story, fontSize: 38, lineHeight: 44, color: colors.ink, marginTop: 4 },
-  sub: { fontFamily: fonts.body, fontSize: 15, color: colors.secondary, marginTop: 4 },
+  eyebrow: { ...type.kicker, color: colors.brassText },
+  name: { ...type.display, fontSize: 36, lineHeight: 42, marginTop: 4 },
+  sub: { ...type.body, marginTop: 4 },
   raisedHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" },
-  raisedLabel: { fontFamily: fonts.heavy, fontSize: 11, letterSpacing: 2, color: colors.muted },
-  raisedOf: { fontFamily: fonts.semibold, fontSize: 13, color: colors.muted },
-  raised: { fontFamily: fonts.black, fontSize: 32, color: colors.ink, marginTop: 4, fontVariant: ["tabular-nums"] },
+  raisedLabel: { ...type.labelSm, color: colors.muted },
+  raisedOf: { ...type.bodySm, color: colors.muted },
+  raised: { ...type.figure, fontSize: 34, lineHeight: 40, color: colors.money, marginTop: 2 },
   track: { height: 12, borderRadius: 6, backgroundColor: "rgba(17,26,58,0.07)", marginTop: 10, overflow: "hidden" },
-  fill: { height: "100%", borderRadius: 6, backgroundColor: colors.red },
-  note: { fontFamily: fonts.body, fontSize: 12.5, color: colors.muted, marginTop: 8 },
-  fine: { fontFamily: fonts.body, fontSize: 12, lineHeight: 17, color: colors.muted, textAlign: "center", marginTop: 10 },
-  story: { fontFamily: fonts.body, fontSize: 15.5, lineHeight: 24, color: colors.ink, marginTop: 10 },
+  fill: { height: "100%", borderRadius: 6, backgroundColor: colors.money },
+  note: { ...type.bodySm, color: colors.muted, marginTop: 8 },
+  fine: { ...type.bodySm, fontSize: 12, lineHeight: 17, color: colors.muted, textAlign: "center", marginTop: 10 },
+  story: { ...type.body, color: colors.ink, marginTop: 10 },
 });

@@ -1,34 +1,50 @@
-import type { ReactNode } from "react";
-import { Image, Pressable, StyleSheet, Text, View, type ViewStyle } from "react-native";
+import { useEffect, useState, type ReactNode } from "react";
+import { Animated, Image, Pressable, StyleSheet, Text, View, type ViewStyle } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { router } from "expo-router";
-import { colors, fonts, shadow } from "../theme";
+import { colors, fonts, radius, shadow, type } from "../theme";
+import { curve, prefersReducedMotion, tap } from "./motion";
 
 export const emblem = require("../../assets/brand/emblem.png");
 
-/** v3 screen header: emblem, brass eyebrow, big title, optional avatar on the right. */
+/**
+ * v3 screen header: a quiet kicker, the title, an optional back button and
+ * an optional control on the right. The emblem no longer repeats on every
+ * screen (audit 2026-09-28) — it lives on Welcome, the splash and Profile.
+ */
 export function Header({
   eyebrow,
   title,
   right,
   back,
+  emblem: showEmblem = false,
 }: {
   eyebrow?: string;
   title: string;
   right?: ReactNode;
   back?: boolean;
+  emblem?: boolean;
 }) {
   return (
     <View style={s.header}>
       {back ? (
-        <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={s.back} hitSlop={8}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          onPress={() => {
+            tap.light();
+            router.back();
+          }}
+          style={({ pressed }) => [s.back, pressed && { opacity: 0.6 }]}
+          hitSlop={8}
+        >
           <Svg width={20} height={20} viewBox="0 0 24 24">
-            <Path d="M15 5l-7 7 7 7" stroke={colors.ink} strokeWidth={2.2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            <Path d="M15 5l-7 7 7 7" stroke={colors.ink} strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
           </Svg>
         </Pressable>
-      ) : (
+      ) : showEmblem ? (
         <Image source={emblem} style={s.emblem} accessibilityIgnoresInvertColors accessible={false} />
-      )}
+      ) : null}
       <View style={{ flex: 1 }}>
         {eyebrow ? <Text style={s.eyebrow}>{eyebrow}</Text> : null}
         <Text style={s.title} accessibilityRole="header">
@@ -61,37 +77,50 @@ export function Avatar({ name, photo, size = 52, onPress }: { name: string; phot
   );
 }
 
-/** Double-bezel card: a soft tray with the white card sitting in it. */
+/** One card surface: white, a hairline, one soft shadow (audit 2026-09-28). */
 export function Card({ children, style, dark }: { children: ReactNode; style?: ViewStyle; dark?: boolean }) {
-  return (
-    <View style={[s.shell, style]}>
-      <View style={[s.core, dark && { backgroundColor: colors.ink }, shadow.card]}>{children}</View>
-    </View>
-  );
+  return <View style={[s.core, dark && { backgroundColor: colors.ink, borderColor: colors.ink }, shadow.card, style]}>{children}</View>;
 }
 
 export function Eyebrow({ children, color = colors.muted, style }: { children: ReactNode; color?: string; style?: object }) {
   return <Text style={[s.small, { color }, style]}>{children}</Text>;
 }
 
-/** 15 squares, one per mile: red = walked, part-filled = in progress, blue star = the finish. */
+/**
+ * 15 squares, one per mile: red = walked, part-filled = in progress, blue
+ * star = the finish. Walked squares fill in one after another on mount.
+ */
 export function MileLedger({ miles, goal = 15 }: { miles: number; goal?: number }) {
   const cells = Array.from({ length: goal }, (_, i) => Math.max(0, Math.min(1, miles - i)));
+  const [anim] = useState(() => cells.map(() => new Animated.Value(prefersReducedMotion() ? 1 : 0)));
+  useEffect(() => {
+    if (prefersReducedMotion()) return;
+    const seq = Animated.stagger(
+      45,
+      anim.map((v) => Animated.timing(v, { toValue: 1, duration: 360, easing: curve, useNativeDriver: true })),
+    );
+    seq.start();
+    return () => seq.stop();
+    // Once on mount; the values themselves never change identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   return (
     <View style={s.ledger} accessibilityLabel={`${Math.floor(miles)} of ${goal} miles complete`}>
-      {cells.map((f, i) =>
-        i === goal - 1 ? (
-          <View key={i} style={[s.cell, { backgroundColor: f >= 1 ? colors.red : colors.blue, alignItems: "center", justifyContent: "center" }]}>
+      {cells.map((f, i) => {
+        const walked = f >= 1;
+        const scale = walked ? anim[i].interpolate({ inputRange: [0, 0.6, 1], outputRange: [0.6, 1.08, 1] }) : 1;
+        return i === goal - 1 ? (
+          <Animated.View key={i} style={[s.cell, { backgroundColor: walked ? colors.red : colors.blue, alignItems: "center", justifyContent: "center", transform: [{ scale }] }]}>
             <Svg width={12} height={12} viewBox="0 0 24 24">
               <Path d="M12 2.5l2.9 6.1 6.6.7-4.9 4.5 1.4 6.6L12 17l-6 3.4 1.4-6.6-4.9-4.5 6.6-.7z" fill={colors.white} />
             </Svg>
-          </View>
+          </Animated.View>
         ) : (
-          <View key={i} style={[s.cell, { backgroundColor: f >= 1 ? colors.red : colors.paperDeep }]}>
+          <Animated.View key={i} style={[s.cell, { backgroundColor: walked ? colors.red : colors.paperDeep, transform: [{ scale }] }]}>
             {f > 0 && f < 1 ? <View style={[s.cellFill, { height: `${f * 100}%` }]} /> : null}
-          </View>
-        ),
-      )}
+          </Animated.View>
+        );
+      })}
     </View>
   );
 }
@@ -130,8 +159,8 @@ export function Notice({ children, tone = "brass" }: { children: ReactNode; tone
 }
 
 const s = StyleSheet.create({
-  header: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 8 },
-  emblem: { width: 46, height: 46 },
+  header: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 8, minHeight: 52 },
+  emblem: { width: 44, height: 44 },
   back: {
     width: 44,
     height: 44,
@@ -140,20 +169,19 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  eyebrow: { fontFamily: fonts.heavy, fontSize: 11, letterSpacing: 2.4, color: colors.brassText },
-  title: { fontFamily: fonts.black, fontSize: 28, color: colors.ink, marginTop: 1 },
+  eyebrow: { ...type.kicker, color: colors.brassText },
+  title: { ...type.title, marginTop: 2 },
   avatarRing: { borderWidth: 2, borderColor: colors.red, alignItems: "center", justifyContent: "center" },
   avatar: { backgroundColor: colors.blue, alignItems: "center", justifyContent: "center" },
   avatarText: { fontFamily: fonts.heavy, color: colors.white },
-  shell: { borderRadius: 32, padding: 6, backgroundColor: "rgba(17,26,58,0.05)" },
-  core: { borderRadius: 26, backgroundColor: colors.white, padding: 18 },
-  small: { fontFamily: fonts.heavy, fontSize: 11, letterSpacing: 1.8 },
+  core: { borderRadius: radius.card, backgroundColor: colors.white, padding: 18, borderWidth: 1, borderColor: colors.hairline },
+  small: { ...type.kicker },
   ledger: { flexDirection: "row", gap: 4 },
   cell: { flex: 1, height: 22, borderRadius: 5, overflow: "hidden", justifyContent: "flex-end" },
   cellFill: { backgroundColor: colors.red, width: "100%" },
   row: { flexDirection: "row", alignItems: "center", paddingVertical: 14, gap: 12 },
-  rowLabel: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
-  rowSub: { fontFamily: fonts.body, fontSize: 12.5, color: colors.muted, marginTop: 2, lineHeight: 17 },
-  notice: { borderRadius: 16, padding: 14, marginTop: 14 },
-  noticeText: { fontFamily: fonts.semibold, color: colors.ink, fontSize: 14, lineHeight: 20 },
+  rowLabel: { ...type.label },
+  rowSub: { ...type.bodySm, color: colors.muted, marginTop: 1 },
+  notice: { borderRadius: 14, padding: 14, marginTop: 14 },
+  noticeText: { ...type.bodySm, fontFamily: fonts.semibold, color: colors.ink },
 });

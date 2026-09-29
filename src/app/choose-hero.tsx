@@ -51,7 +51,7 @@ export default function ChooseHero() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.pad}>
-        <Header back eyebrow="YOUR HERO" title="Who will you walk for?" />
+        <Header back eyebrow="Your hero" title="Who will you walk for?" />
         <Text style={styles.body}>
           Every walker is paired with one named veteran. Your miles and your backers’ pledges go to that hero’s exoskeleton package.
         </Text>

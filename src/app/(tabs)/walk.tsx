@@ -17,7 +17,7 @@ import { onWalkUpdated } from "../../walk/locationTask";
 import { WalkError, finishWalk, openSettings, pauseWalk, resumeWalk, sendWalk, startWalk, type SendOutcome } from "../../walk/controller";
 import { discardWalk, getPoints, openWalk, recentDone, walkingSeconds, type WalkRow } from "../../walk/store";
 import type { PathPoint } from "../../walk/capture";
-import { colors, fonts, shadow } from "../../theme";
+import { colors, fonts, shadow, type } from "../../theme";
 
 /**
  * The walk (v3 "Walking · night map"). Recording happens in the background
@@ -72,6 +72,13 @@ export default function WalkScreen() {
   // Live miles use the SAME analysis the server runs at Finish, so the number
   // on screen is the number that will be credited (the server has the last word).
   const live = useMemo(() => analyzeOnFoot(points), [points]);
+  // A firm tap each time a whole mile lands (design audit, 2026-09-28).
+  const lastMile = useRef(0);
+  useEffect(() => {
+    const whole = Math.floor(live.miles);
+    if (whole > lastMile.current && lastMile.current > 0) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
+    lastMile.current = whole;
+  }, [live.miles]);
   const seconds = walk ? walkingSeconds(walk, now) : 0;
   const pace = formatPace(live.miles, seconds);
   const lastAcc = points.length ? points[points.length - 1].acc : null;
@@ -161,11 +168,11 @@ export default function WalkScreen() {
         ) : null}
       </View>
 
-      <View style={[styles.sheet, shadow.card, { paddingBottom: 96 + Math.max(insets.bottom, 10) }]}>
+      <View style={[styles.sheet, shadow.float, { paddingBottom: 100 + Math.max(insets.bottom, 10) }]}>
         <View style={styles.grabber} />
 
         {status === "idle" ? (
-          <ScrollView style={{ maxHeight: 420 }} contentContainerStyle={{ paddingBottom: 4 }}>
+          <ScrollView style={{ maxHeight: 440 }} contentContainerStyle={{ paddingBottom: 8 }} showsVerticalScrollIndicator={false}>
             <Text style={styles.readyTitle}>Ready to walk</Text>
             <InfoRow
               icon="star"
@@ -191,7 +198,7 @@ export default function WalkScreen() {
             />
             {recent.length > 0 && (
               <View style={{ marginTop: 16 }}>
-                <Text style={styles.label}>RECENT WALKS</Text>
+                <Text style={styles.label}>Recent walks</Text>
                 {recent.map((r) => (
                   <Pressable
                     key={r.id}
@@ -401,37 +408,37 @@ const styles = StyleSheet.create({
   },
   chipPhoto: { width: 24, height: 24, borderRadius: 12 },
   dot: { width: 9, height: 9, borderRadius: 5 },
-  chipText: { fontFamily: fonts.heavy, color: colors.paper, fontSize: 14 },
+  chipText: { ...type.labelSm, fontFamily: fonts.bold, color: colors.paper },
   sheet: {
     position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
     backgroundColor: colors.paper,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     paddingHorizontal: 20,
     paddingTop: 10,
   },
   grabber: { alignSelf: "center", width: 40, height: 5, borderRadius: 3, backgroundColor: "rgba(17,26,58,0.15)", marginBottom: 12 },
-  readyTitle: { fontFamily: fonts.black, fontSize: 26, color: colors.ink, marginBottom: 6 },
+  readyTitle: { ...type.title, marginBottom: 6 },
   info: { flexDirection: "row", gap: 12, alignItems: "flex-start", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.hairline },
-  infoTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
-  infoSub: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: colors.muted, marginTop: 1 },
-  label: { fontFamily: fonts.heavy, fontSize: 11.5, letterSpacing: 2.4, color: colors.brassText },
+  infoTitle: { ...type.label },
+  infoSub: { ...type.bodySm, color: colors.muted, marginTop: 1 },
+  label: { ...type.kicker, color: colors.brassText },
   headRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" },
-  miles: { fontFamily: fonts.black, fontSize: 64, lineHeight: 70, color: colors.ink, fontVariant: ["tabular-nums"] },
+  miles: { ...type.figure, fontSize: 64, lineHeight: 70 },
   milesUnit: { fontFamily: fonts.bold, fontSize: 20, color: colors.secondary },
-  plus: { fontFamily: fonts.black, fontSize: 24, color: colors.red, fontVariant: ["tabular-nums"] },
+  plus: { ...type.figureSm, fontSize: 24, color: colors.ink },
   plusSub: { fontFamily: fonts.semibold, fontSize: 13, color: colors.secondary },
   bar: { flexDirection: "row", gap: 3, marginTop: 10 },
   seg: { flex: 1, height: 12, borderRadius: 3, overflow: "hidden", flexDirection: "row" },
   missionRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 6 },
   missionText: { fontFamily: fonts.semibold, fontSize: 12.5, color: colors.secondary },
   tiles: { flexDirection: "row", gap: 8, marginTop: 14 },
-  tile: { flex: 1, backgroundColor: colors.white, borderRadius: 16, paddingVertical: 10, paddingHorizontal: 12 },
-  tileLabel: { fontFamily: fonts.heavy, fontSize: 10.5, letterSpacing: 1.8, color: colors.muted },
-  tileValue: { fontFamily: fonts.black, fontSize: 19, color: colors.ink, marginTop: 2, fontVariant: ["tabular-nums"] },
+  tile: { flex: 1, backgroundColor: colors.white, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 12, borderWidth: 1, borderColor: colors.hairline },
+  tileLabel: { ...type.kicker },
+  tileValue: { ...type.figureSm, fontSize: 19, lineHeight: 24, marginTop: 2 },
   note: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: colors.secondary, marginTop: 12 },
   hint: { fontFamily: fonts.semibold, fontSize: 13, color: colors.red, marginTop: 8, textAlign: "center" },
   problem: { backgroundColor: "rgba(200,32,42,0.08)", borderRadius: 14, padding: 12, marginTop: 12 },
@@ -439,9 +446,9 @@ const styles = StyleSheet.create({
   link: { fontFamily: fonts.bold, color: colors.blue, textDecorationLine: "underline" },
   row: { flexDirection: "row", gap: 10, marginTop: 14 },
   finish: { flex: 1, minHeight: 56, borderRadius: 999, backgroundColor: colors.red, alignItems: "center", justifyContent: "center" },
-  finishText: { fontFamily: fonts.heavy, fontSize: 17, color: colors.white },
+  finishText: { fontFamily: fonts.bold, fontSize: 16.5, color: colors.white },
   finishSub: { fontFamily: fonts.semibold, fontSize: 11, color: "rgba(255,255,255,0.85)" },
   recent: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.hairline },
-  recentText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.ink },
-  recentLink: { fontFamily: fonts.bold, fontSize: 14, color: colors.blue },
+  recentText: { ...type.labelSm },
+  recentLink: { ...type.labelSm, color: colors.blue },
 });

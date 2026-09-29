@@ -92,7 +92,7 @@ export default function RouteArt() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.pad}>
-        <Header back eyebrow="SHARE" title="Route art" />
+        <Header back eyebrow="Share" title="Route art" />
         <View style={styles.cardWrap}>
           <Svg ref={svgRef} width="100%" height="100%" viewBox={`0 0 ${W} ${H}`}>
             <Defs>

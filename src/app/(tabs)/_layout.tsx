@@ -1,29 +1,34 @@
-import { useEffect } from "react";
-import { AppState, Pressable, StyleSheet, Text, View, type ColorValue } from "react-native";
+import { useEffect, useState } from "react";
+import { Animated, AppState, Pressable, StyleSheet, Text, View, type ColorValue } from "react-native";
 import type { BottomTabBarProps } from "expo-router/tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Tabs } from "expo-router";
 import Svg, { Circle, Path } from "react-native-svg";
 import { colors, fonts, shadow } from "../../theme";
+import { curve, tap } from "../../components/motion";
 import { flushPending, reattachIfWalking } from "../../walk/controller";
 import { pruneFinished } from "../../walk/store";
 
 type IconName = "today" | "walk" | "backers" | "hero";
 
-function Icon({ name, color }: { name: IconName; color: ColorValue }) {
+/** One drawn family at one weight (1.8). A filled variant marks the active tab. */
+function Icon({ name, color, active }: { name: IconName; color: ColorValue; active: boolean }) {
+  const fill = active ? color : "none";
   return (
-    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
       {name === "today" && (
+        // A medal: the ring of the emblem with the star inside.
         <>
-          <Circle cx={12} cy={12} r={8.5} />
-          <Circle cx={12} cy={12} r={5} />
+          <Circle cx={12} cy={13} r={7.5} />
+          <Path d="M8.5 6.5L7 2.5h10l-1.5 4" />
+          <Path d="M12 9.2l1.2 2.4 2.6.3-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.3z" fill={fill} strokeWidth={active ? 0 : 1.4} />
         </>
       )}
       {name === "walk" && (
+        // Two footprints, one ahead of the other.
         <>
-          <Path d="M4 19c3-1 3-6 7-6s4-7 9-8" />
-          <Circle cx={4} cy={19} r={1.5} />
-          <Circle cx={20} cy={5} r={1.5} />
+          <Path d="M7.5 3.5c1.6 0 2.5 1.6 2.5 3.6 0 1.7-.6 3.2-1.8 3.9L8 13.5c-.2 1-1.2 1.4-2 1.1-.9-.3-1.3-1.2-1-2.1l.3-2.6C4.6 8.5 4.5 7 4.8 5.8 5.2 4.4 6.1 3.5 7.5 3.5z" fill={fill} />
+          <Path d="M16.5 9.5c1.4 0 2.3 1 2.7 2.4.3 1.2.2 2.7-.5 4.1l.3 2.6c.3.9-.1 1.8-1 2.1-.8.3-1.8-.1-2-1.1l-.2-2.5c-1.2-.7-1.8-2.2-1.8-3.9 0-2 .9-3.7 2.5-3.7z" fill={fill} />
         </>
       )}
       {name === "backers" && (
@@ -33,7 +38,7 @@ function Icon({ name, color }: { name: IconName; color: ColorValue }) {
           <Path d="M15 5.6a3.2 3.2 0 010 6M17 13.9c2 .6 3.2 2.3 3.6 5.1" />
         </>
       )}
-      {name === "hero" && <Path d="M12 3l2.7 5.6 6.1.7-4.5 4.2 1.2 6.1L12 16.6l-5.5 3 1.2-6.1-4.5-4.2 6.1-.7z" />}
+      {name === "hero" && <Path d="M12 3l2.7 5.6 6.1.7-4.5 4.2 1.2 6.1L12 16.6l-5.5 3 1.2-6.1-4.5-4.2 6.1-.7z" fill={fill} />}
     </Svg>
   );
 }
@@ -50,31 +55,45 @@ function FloatingTabBar({ state, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   return (
     <View style={[bar.wrap, { paddingBottom: Math.max(insets.bottom, 10) }]} pointerEvents="box-none">
-      <View style={[bar.pill, shadow.card]}>
+      <View style={[bar.pill, shadow.float]}>
         {state.routes.map((route, i) => {
           const tab = TABS.find((t) => t.name === route.name);
           if (!tab) return null;
           const focused = state.index === i;
-          const color = focused ? colors.red : colors.muted;
           return (
-            <Pressable
+            <TabItem
               key={route.key}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: focused }}
-              accessibilityLabel={tab.title}
+              title={tab.title}
+              icon={tab.icon}
+              focused={focused}
               onPress={() => {
                 const e = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
-                if (!focused && !e.defaultPrevented) navigation.navigate(route.name);
+                if (!focused && !e.defaultPrevented) {
+                  tap.select();
+                  navigation.navigate(route.name);
+                }
               }}
-              style={bar.item}
-            >
-              <Icon name={tab.icon} color={color} />
-              <Text style={[bar.label, { color }]}>{tab.title}</Text>
-            </Pressable>
+            />
           );
         })}
       </View>
     </View>
+  );
+}
+
+function TabItem({ title, icon, focused, onPress }: { title: string; icon: IconName; focused: boolean; onPress: () => void }) {
+  const [v] = useState(() => new Animated.Value(focused ? 1 : 0));
+  useEffect(() => {
+    Animated.timing(v, { toValue: focused ? 1 : 0, duration: 260, easing: curve, useNativeDriver: true }).start();
+  }, [focused, v]);
+  const color = focused ? colors.red : colors.muted;
+  return (
+    <Pressable accessibilityRole="tab" accessibilityState={{ selected: focused }} accessibilityLabel={title} onPress={onPress} style={bar.item}>
+      <Animated.View style={{ transform: [{ translateY: v.interpolate({ inputRange: [0, 1], outputRange: [0, -1.5] }) }, { scale: v.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] }) }] }}>
+        <Icon name={icon} color={color} active={focused} />
+      </Animated.View>
+      <Text style={[bar.label, { color }]}>{title}</Text>
+    </Pressable>
   );
 }
 

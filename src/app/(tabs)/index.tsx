@@ -12,7 +12,8 @@ import { HeroPhoto } from "../../components/HeroPhoto";
 import { MISSION_MILES, SITE_URL } from "../../lib/config";
 import { heroSubtitle, initials, money, ordinal, pledgeSummary, walkerActivity, walkNumber } from "../../lib/data";
 import { openWalk } from "../../walk/store";
-import { colors, fonts, shadow } from "../../theme";
+import { colors, fonts, shadow, type } from "../../theme";
+import { CountUp, Rise, Shimmer } from "../../components/motion";
 
 export default function Today() {
   const { state } = useAuth();
@@ -43,7 +44,7 @@ export default function Today() {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.pad}>
-          <Header eyebrow="WALK FOR A HERO" title={state.walkerError === "offline" ? "You're offline" : "Welcome"} />
+          <Header eyebrow="Walk For A Hero" title={state.walkerError === "offline" ? "You're offline" : "Welcome"} />
           <Text style={styles.body}>
             {state.walkerError === "offline"
               ? "We can't reach Walk For A Hero right now. You can still record a walk — it will be sent when you're back online."
@@ -79,7 +80,7 @@ export default function Today() {
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.pad} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         <Header
-          eyebrow={activity.dormant ? "ACCOUNT DORMANT" : done ? "WALK COMPLETE" : n > 1 ? `YOUR ${ordinal(n).toUpperCase()} WALK` : "YOUR WALK"}
+          eyebrow={activity.dormant ? "Account dormant" : done ? "Walk complete" : n > 1 ? `Your ${ordinal(n)} walk` : "Your walk"}
           title="Today"
           right={<Avatar name={initials(walker.name)} photo={walker.photo_url} onPress={() => router.push("/profile")} />}
         />
@@ -87,33 +88,33 @@ export default function Today() {
         {walking && <Notice>You have a walk in progress. Open Walk to see it.</Notice>}
         {pending && <Notice>You have a finished walk waiting to be sent. Open Walk to send it.</Notice>}
 
+        <Rise index={0}>
         <Card style={{ marginTop: 18 }}>
           <View style={styles.cardRow}>
             <ProgressRing miles={miles} goal={goal} size={160} />
             <View style={{ flex: 1, gap: 10 }}>
               <View>
-                <Text style={styles.statLabel}>PLEDGED</Text>
-                <Text style={styles.statBig} adjustsFontSizeToFit numberOfLines={1}>
-                  {money(p.pledgedToCollect)}
-                </Text>
+                <Text style={styles.statLabel}>Pledged</Text>
+                <CountUp value={p.pledgedToCollect} format={(n) => money(n)} style={styles.statBig} />
               </View>
               <View style={styles.rule} />
               <View>
-                <Text style={styles.statLabel}>RAISED</Text>
-                <Text style={[styles.statBig, { color: colors.money }]} adjustsFontSizeToFit numberOfLines={1}>
-                  {money(walker.total_raised)}
-                </Text>
+                <Text style={styles.statLabel}>Raised</Text>
+                <CountUp value={walker.total_raised || 0} format={(n) => money(n)} style={[styles.statBig, { color: colors.money }]} />
               </View>
               <Text style={styles.small}>{paceLine}</Text>
             </View>
           </View>
         </Card>
+        </Rise>
 
+        <Rise index={1}>
         <View style={styles.ledgerHead}>
-          <Text style={styles.ledgerLabel}>MILE LEDGER</Text>
+          <Text style={styles.ledgerLabel}>Mile ledger</Text>
           <Text style={styles.ledgerRight}>{done ? "All 15 miles" : `Mile ${nextMile} · ${pctOfMile}%`}</Text>
         </View>
         <MileLedger miles={miles} goal={goal} />
+        </Rise>
 
         {activity.dormant ? (
           <Notice tone="blue">
@@ -127,7 +128,7 @@ export default function Today() {
            * the next screen.
            */
           <View style={[styles.againCard, shadow.card]}>
-            <Text style={styles.againEyebrow}>{n > 1 ? `YOUR ${ordinal(n).toUpperCase()} WALK IS COMPLETE` : "WALK COMPLETE"}</Text>
+            <Text style={styles.againEyebrow}>{n > 1 ? `Your ${ordinal(n)} walk is complete` : "Walk complete"}</Text>
             <Text style={styles.againTitle}>
               You walked {miles.toFixed(1)} miles{hero ? ` for ${hero.name}` : ""}.
             </Text>
@@ -145,11 +146,17 @@ export default function Today() {
           />
         )}
 
-        {hero ? (
-          <Pressable accessibilityRole="button" onPress={() => router.navigate("/hero")} style={[styles.heroCard, shadow.card]}>
+        {!loaded && !hero ? (
+          <View style={[styles.heroCard, { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.hairline, padding: 16, gap: 10 }]}>
+            <Shimmer width="30%" height={10} />
+            <Shimmer width="70%" height={22} />
+            <Shimmer width="50%" height={12} />
+          </View>
+        ) : hero ? (
+          <Pressable accessibilityRole="button" onPress={() => router.navigate("/hero")} style={({ pressed }) => [styles.heroCard, shadow.card, pressed && { transform: [{ scale: 0.98 }] }]}>
             <HeroPhoto uri={hero.photo_url} name={hero.name} style={styles.heroPhotoWrap} textSize={30} />
             <View style={styles.heroText}>
-              <Text style={styles.heroEyebrow}>WALKING FOR</Text>
+              <Text style={styles.heroEyebrow}>Walking for</Text>
               <Text style={styles.heroName} numberOfLines={1} adjustsFontSizeToFit>
                 {hero.name}
               </Text>
@@ -161,7 +168,7 @@ export default function Today() {
         ) : loaded ? (
           <Pressable accessibilityRole="button" onPress={() => router.push("/choose-hero")} style={[styles.heroCard, styles.chooseCard, shadow.card]}>
             <View style={styles.heroText}>
-              <Text style={styles.heroEyebrow}>WHO ARE YOU WALKING FOR?</Text>
+              <Text style={styles.heroEyebrow}>Who are you walking for?</Text>
               <Text style={styles.heroName}>Choose your hero</Text>
               <Text style={styles.heroSub}>Your miles and your backers’ pledges fund one named veteran’s exoskeleton.</Text>
             </View>
@@ -186,29 +193,29 @@ export default function Today() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.paper },
   pad: { padding: 20, paddingBottom: 120 },
-  body: { fontFamily: fonts.body, fontSize: 15, lineHeight: 22, color: colors.secondary, marginTop: 16 },
+  body: { ...type.body, marginTop: 16 },
   cardRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  statLabel: { fontFamily: fonts.heavy, fontSize: 11, letterSpacing: 2, color: colors.muted },
-  statBig: { fontFamily: fonts.black, fontSize: 26, color: colors.ink, fontVariant: ["tabular-nums"], marginTop: 2 },
+  statLabel: { ...type.labelSm, color: colors.muted },
+  statBig: { ...type.figureSm, fontSize: 24, marginTop: 1 },
   rule: { height: 1, backgroundColor: colors.hairline },
-  small: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: colors.secondary },
-  ledgerHead: { flexDirection: "row", justifyContent: "space-between", marginTop: 22, marginBottom: 10 },
-  ledgerLabel: { fontFamily: fonts.heavy, fontSize: 12, letterSpacing: 1, color: colors.secondary },
-  ledgerRight: { fontFamily: fonts.bold, fontSize: 12.5, color: colors.secondary },
-  heroCard: { marginTop: 16, borderRadius: 26, backgroundColor: colors.ink, flexDirection: "row", overflow: "hidden", minHeight: 96 },
+  small: { ...type.bodySm },
+  ledgerHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", marginTop: 22, marginBottom: 10 },
+  ledgerLabel: { ...type.labelSm, color: colors.secondary },
+  ledgerRight: { ...type.bodySm, fontFamily: fonts.semibold },
+  heroCard: { marginTop: 16, borderRadius: 20, backgroundColor: colors.ink, flexDirection: "row", overflow: "hidden", minHeight: 96 },
   chooseCard: { backgroundColor: colors.blue },
   heroPhotoWrap: { width: 96, backgroundColor: colors.blue },
   heroPhoto: { width: "100%", height: "100%" },
   heroText: { flex: 1, padding: 16, justifyContent: "center" },
-  heroEyebrow: { fontFamily: fonts.heavy, fontSize: 11, letterSpacing: 2.2, color: colors.brass },
-  heroName: { fontFamily: fonts.story, fontSize: 24, color: colors.paper, marginTop: 2 },
-  heroSub: { fontFamily: fonts.body, fontSize: 13, lineHeight: 18, color: "rgba(244,238,227,0.72)", marginTop: 3 },
-  backersRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 16, paddingVertical: 6 },
-  backersText: { flex: 1, fontFamily: fonts.semibold, fontSize: 14, color: colors.secondary },
-  backersLink: { fontFamily: fonts.bold, fontSize: 14, color: colors.blue, textDecorationLine: "underline" },
-  againCard: { marginTop: 18, borderRadius: 26, backgroundColor: colors.ink, padding: 20 },
-  againEyebrow: { fontFamily: fonts.heavy, fontSize: 11, letterSpacing: 2.2, color: colors.brass },
-  againTitle: { fontFamily: fonts.story, fontSize: 26, lineHeight: 32, color: colors.paper, marginTop: 6 },
-  againBody: { fontFamily: fonts.body, fontSize: 14.5, lineHeight: 21, color: "rgba(244,238,227,0.78)", marginTop: 8 },
-  disclaimer: { fontFamily: fonts.body, fontSize: 11.5, lineHeight: 16, color: colors.muted, marginTop: 14 },
+  heroEyebrow: { ...type.kicker, color: colors.brass },
+  heroName: { fontFamily: fonts.story, fontSize: 24, lineHeight: 28, color: colors.paper, marginTop: 3 },
+  heroSub: { ...type.bodySm, color: "rgba(244,238,227,0.72)", marginTop: 3 },
+  backersRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 16, paddingVertical: 6, gap: 12 },
+  backersText: { flex: 1, ...type.bodySm, fontFamily: fonts.semibold },
+  backersLink: { ...type.labelSm, color: colors.blue, textDecorationLine: "underline" },
+  againCard: { marginTop: 18, borderRadius: 20, backgroundColor: colors.ink, padding: 20 },
+  againEyebrow: { ...type.kicker, color: colors.brass },
+  againTitle: { ...type.display, fontSize: 28, lineHeight: 33, color: colors.paper, marginTop: 6 },
+  againBody: { ...type.bodySm, fontSize: 14.5, lineHeight: 21, color: "rgba(244,238,227,0.78)", marginTop: 8 },
+  disclaimer: { ...type.bodySm, fontSize: 12, lineHeight: 17, color: colors.muted, marginTop: 14 },
 });

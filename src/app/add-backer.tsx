@@ -7,7 +7,7 @@ import { Pill } from "../components/Pill";
 import { Header } from "../components/ui";
 import { base44 } from "../lib/base44";
 import { MAX_PLEDGE_PER_MILE, money } from "../lib/data";
-import { colors, fonts } from "../theme";
+import { colors, fonts, type } from "../theme";
 
 /**
  * Log a pledge someone arranged with the walker directly — exactly what the
@@ -61,7 +61,7 @@ export default function AddBacker() {
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={styles.pad} keyboardShouldPersistTaps="handled">
-          <Header back eyebrow="BACKERS" title="Add a pledge" />
+          <Header back eyebrow="Backers" title="Add a pledge" />
           <Text style={styles.body}>For a pledge someone made to you in person. It shows up on walkforahero.com too.</Text>
 
           <Field label="Backer's name" value={name} onChangeText={setName} autoCapitalize="words" />
@@ -104,20 +104,20 @@ function Field(props: React.ComponentProps<typeof TextInput> & { label: string }
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.paper },
   pad: { padding: 20, paddingBottom: 40 },
-  body: { fontFamily: fonts.body, fontSize: 15, lineHeight: 22, color: colors.secondary, marginTop: 14 },
-  label: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink },
+  body: { ...type.body, marginTop: 14 },
+  label: { ...type.labelSm },
   input: {
     marginTop: 6,
     minHeight: 50,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: colors.hairline,
+    borderColor: "rgba(17,26,58,0.18)",
     paddingHorizontal: 14,
     fontFamily: fonts.body,
     fontSize: 16,
     color: colors.ink,
     backgroundColor: colors.white,
   },
-  hint: { fontFamily: fonts.body, fontSize: 13, color: colors.secondary, marginTop: 12 },
+  hint: { ...type.bodySm, marginTop: 12 },
   error: { fontFamily: fonts.semibold, fontSize: 14, color: colors.red, marginTop: 12 },
 });

@@ -8,7 +8,7 @@ import { Pill } from "../components/Pill";
 import { callFunction, functionError , base44 } from "../lib/base44";
 import { SITE_URL } from "../lib/config";
 import { openWalk } from "../walk/store";
-import { colors, fonts } from "../theme";
+import { colors, fonts, type } from "../theme";
 import { router, useFocusEffect } from "expo-router";
 import { changeWalkerPhoto, removeWalkerPhoto, PhotoError } from "../lib/photo";
 import { pushPermission, registerForPush, type PushState } from "../lib/push";
@@ -137,7 +137,7 @@ export default function Profile() {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.pad} keyboardShouldPersistTaps="handled">
-        <Header back eyebrow="PROFILE" title="You" />
+        <Header back eyebrow="Profile" title={walker?.name?.split(" ")[0] || "You"} />
 
         <View style={styles.card}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
@@ -176,7 +176,7 @@ export default function Profile() {
         {completedWalks(walker).length > 0 ? (
           <>
             <Text style={styles.section}>
-              YOUR WALKS · {lifetimeMiles(walker).toFixed(1)} MI IN ALL
+              Your walks · {lifetimeMiles(walker).toFixed(1)} mi in all
             </Text>
             <View style={styles.card}>
               {completedWalks(walker).map((c, i) => (
@@ -199,7 +199,7 @@ export default function Profile() {
 
         {walker ? (
           <>
-            <Text style={styles.section}>NOTIFY ME WHEN</Text>
+            <Text style={styles.section}>Notify me when</Text>
             <View style={styles.card}>
               {push !== "on" ? (
                 <Row
@@ -279,8 +279,8 @@ export default function Profile() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.paper },
-  pad: { padding: 20, paddingBottom: 48 },
-  section: { fontFamily: fonts.heavy, fontSize: 11, letterSpacing: 2, color: colors.muted, marginTop: 22, marginBottom: 8 },
+  pad: { padding: 20, paddingBottom: 72 },
+  section: { ...type.kicker, marginTop: 22, marginBottom: 8 },
   photoLink: { fontFamily: fonts.bold, fontSize: 14, color: colors.blue },
   photoMsg: { fontFamily: fonts.semibold, fontSize: 13.5, color: colors.ink, marginTop: 10 },
   card: { backgroundColor: colors.white, borderRadius: 24, padding: 18, marginTop: 16 },

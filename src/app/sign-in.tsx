@@ -15,7 +15,7 @@ import { useAuth } from "../auth/AuthContext";
 import { Pill } from "../components/Pill";
 import { APPLE_SIGNIN_ENABLED, SITE_URL } from "../lib/config";
 import { signInWithEmail, signInWithProvider, SignInError } from "../lib/session";
-import { colors, fonts } from "../theme";
+import { colors, fonts, type } from "../theme";
 
 export default function SignIn() {
   const { signedIn } = useAuth();
@@ -110,26 +110,26 @@ export default function SignIn() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.paper },
   scroll: { padding: 20, paddingBottom: 40 },
-  eyebrow: { fontFamily: fonts.heavy, fontSize: 12, letterSpacing: 2.4, color: colors.brassText, marginTop: 24 },
-  h1: { fontFamily: fonts.story, fontSize: 32, lineHeight: 36, color: colors.ink, marginTop: 10 },
-  lede: { fontFamily: fonts.body, fontSize: 15, lineHeight: 22, color: colors.secondary, marginTop: 10 },
-  card: { backgroundColor: colors.white, borderRadius: 26, padding: 18 },
-  label: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink },
+  eyebrow: { ...type.kicker, color: colors.brassText, marginTop: 24 },
+  h1: { ...type.display, marginTop: 8 },
+  lede: { ...type.body, marginTop: 10 },
+  card: { backgroundColor: colors.white, borderRadius: 20, padding: 18, borderWidth: 1, borderColor: colors.hairline },
+  label: { ...type.labelSm },
   input: {
     marginTop: 6,
     minHeight: 48,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: colors.hairline,
+    borderColor: "rgba(17,26,58,0.18)",
     paddingHorizontal: 14,
     fontFamily: fonts.body,
     fontSize: 16,
     color: colors.ink,
-    backgroundColor: colors.paper,
+    backgroundColor: colors.white,
   },
   error: { fontFamily: fonts.semibold, color: colors.red, marginTop: 12, fontSize: 14, lineHeight: 20 },
   linkRow: { paddingVertical: 12, alignItems: "center" },
   link: { fontFamily: fonts.semibold, fontSize: 14, color: colors.blue, textDecorationLine: "underline" },
   detail: { fontFamily: fonts.body, color: colors.muted, marginTop: 6, fontSize: 11, lineHeight: 15 },
-  or: { textAlign: "center", fontFamily: fonts.semibold, color: colors.muted, marginVertical: 14 },
+  or: { ...type.bodySm, textAlign: "center", color: colors.muted, marginVertical: 14 },
 });
