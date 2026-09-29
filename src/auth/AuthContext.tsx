@@ -24,6 +24,11 @@ export type Walker = {
   hero_supported_id?: string;
   hero_supported_name?: string;
   photo_url?: string;
+  is_walking?: boolean;
+  notify_gifts?: boolean;
+  notify_walk_reviews?: boolean;
+  notify_reminders?: boolean;
+  notify_cheers?: boolean;
   walk_history?: { date: string; miles: number; flagged_for_review?: boolean }[];
   /** Walk again (2026-09-28): which walk this is, and the walks already finished. */
   walk_number?: number;

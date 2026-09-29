@@ -65,7 +65,7 @@ function NotificationTaps({ enabled }: { enabled: boolean }) {
     const go = (data: any) => {
       const kind = String(data?.type || data?.kind || "");
       if (/gift|pledge|backer|donation/i.test(kind)) router.navigate("/backers");
-      else if (/walk/i.test(kind)) router.navigate("/walk");
+      else if (/walk|cheer/i.test(kind)) router.navigate("/walk");
       else router.navigate("/");
     };
     // Never let notification plumbing take the app down.

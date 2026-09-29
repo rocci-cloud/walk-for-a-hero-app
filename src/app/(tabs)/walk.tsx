@@ -9,6 +9,8 @@ import { useAuth } from "../../auth/AuthContext";
 import { useWalkerData } from "../../auth/WalkerData";
 import { Pill } from "../../components/Pill";
 import { HeroPhoto } from "../../components/HeroPhoto";
+import { CheerToast, useCheers } from "../../components/CheerToast";
+import { base44 } from "../../lib/base44";
 import { WalkMap } from "../../components/WalkMap";
 import { analyzeOnFoot, formatElapsed, formatPace } from "../../lib/geo";
 import { backerCurrentCharge, followingThisWalk, money } from "../../lib/data";
@@ -108,6 +110,8 @@ export default function WalkScreen() {
       await startWalk(email);
       setNeedsAlways(false);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      // Tell the website the walker is out, so backers can cheer (best effort).
+      if (walker) base44.entities.Walker.update(walker.id, { is_walking: true, live_miles: 0 }).catch(() => {});
     });
 
   const onPause = () => walk && guard("pause", () => pauseWalk(walk.id));
@@ -119,6 +123,7 @@ export default function WalkScreen() {
       const id = walk.id;
       const out = await finishWalk(id);
       setOutcome(out);
+      if (walker) base44.entities.Walker.update(walker.id, { is_walking: false, live_miles: 0 }).catch(() => {});
       if (out.kind === "done") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
         reloadAll();
@@ -139,6 +144,7 @@ export default function WalkScreen() {
     });
 
   const onDiscard = () => {
+    if (walker) base44.entities.Walker.update(walker.id, { is_walking: false, live_miles: 0 }).catch(() => {});
     if (!walk) return;
     discardWalk(walk.id);
     setOutcome(null);
@@ -146,12 +152,14 @@ export default function WalkScreen() {
   };
 
   const status = walk?.status ?? "idle";
+  const { cheers, latest: latestCheer, clearLatest } = useCheers(walker?.id, walk?.started_at, status === "active" || status === "paused");
   const recording = status === "active";
   const walkingNow = status === "active" || status === "paused";
 
   return (
     <View style={styles.root}>
       <WalkMap points={points} following={status !== "finishing"} bottomInset={status === "idle" ? 300 : 400} />
+      <CheerToast cheer={latestCheer} onDone={clearLatest} top={insets.top + 56} />
 
       <View style={[styles.topBar, { paddingTop: insets.top + 8 }]} pointerEvents="box-none">
         <View style={styles.chip}>
@@ -243,10 +251,15 @@ export default function WalkScreen() {
             </View>
 
             <View style={styles.tiles}>
-              <Tile label="TIME" value={formatElapsed(seconds)} />
-              <Tile label="PACE" value={pace ? pace.replace(" /mi", "") : "—"} />
+              <Tile label="Time" value={formatElapsed(seconds)} />
+              <Tile label="Pace" value={pace ? pace.replace(" /mi", "") : "—"} />
               <Tile label="GPS" value={lastAcc != null ? `±${Math.round(lastAcc)} m` : "…"} />
             </View>
+            {cheers.length > 0 ? (
+              <Text style={styles.cheers} accessibilityLiveRegion="polite">
+                {cheers.length === 1 ? `${cheers[0].from_name} is cheering you on` : `${cheers.length} cheers · ${cheers.slice(0, 3).map((c) => c.from_name.split(" ")[0]).join(", ")}${cheers.length > 3 ? " and more" : ""}`}
+              </Text>
+            ) : null}
 
             {walk && walk.capture.gapCount > 0 && status !== "finishing" ? (
               <Text style={styles.note}>
@@ -440,6 +453,7 @@ const styles = StyleSheet.create({
   tileLabel: { ...type.kicker },
   tileValue: { ...type.figureSm, fontSize: 19, lineHeight: 24, marginTop: 2 },
   note: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: colors.secondary, marginTop: 12 },
+  cheers: { ...type.bodySm, fontFamily: fonts.semibold, color: colors.brassText, marginTop: 12 },
   hint: { fontFamily: fonts.semibold, fontSize: 13, color: colors.red, marginTop: 8, textAlign: "center" },
   problem: { backgroundColor: "rgba(200,32,42,0.08)", borderRadius: 14, padding: 12, marginTop: 12 },
   problemText: { fontFamily: fonts.semibold, fontSize: 14, lineHeight: 20, color: colors.ink },

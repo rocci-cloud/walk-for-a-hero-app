@@ -87,10 +87,10 @@ export default function Profile() {
     if (r === "blocked") Linking.openSettings().catch(() => {});
   };
 
-  const pref = (key: "notify_gifts" | "notify_walk_reviews" | "notify_reminders") =>
+  const pref = (key: "notify_gifts" | "notify_walk_reviews" | "notify_reminders" | "notify_cheers") =>
     prefs[key] ?? ((walker as any)?.[key] !== false);
 
-  const setPref = async (key: "notify_gifts" | "notify_walk_reviews" | "notify_reminders", value: boolean) => {
+  const setPref = async (key: "notify_gifts" | "notify_walk_reviews" | "notify_reminders" | "notify_cheers", value: boolean) => {
     if (!walker) return;
     setPrefs((p) => ({ ...p, [key]: value }));
     try {
@@ -211,6 +211,10 @@ export default function Profile() {
               <Row
                 label="Someone gives to my walk"
                 right={<Switch value={pref("notify_gifts")} onValueChange={(v) => setPref("notify_gifts", v)} trackColor={{ true: colors.red, false: colors.paperDeep }} thumbColor={colors.white} />}
+              />
+              <Row
+                label="A backer cheers me on mid-walk"
+                right={<Switch value={pref("notify_cheers")} onValueChange={(v) => setPref("notify_cheers", v)} trackColor={{ true: colors.red, false: colors.paperDeep }} thumbColor={colors.white} />}
               />
               <Row
                 label="A walk is reviewed"
