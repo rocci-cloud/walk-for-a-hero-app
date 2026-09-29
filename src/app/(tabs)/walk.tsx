@@ -228,7 +228,7 @@ export default function WalkScreen() {
           <>
             <View style={styles.headRow}>
               <View>
-                <Text style={styles.label}>THIS WALK</Text>
+                <Text style={styles.label}>This walk</Text>
                 <Text style={styles.miles} accessibilityLabel={`${live.miles.toFixed(2)} miles this walk`}>
                   {live.miles.toFixed(2)}
                   <Text style={styles.milesUnit}> mi</Text>
