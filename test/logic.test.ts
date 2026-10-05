@@ -4,6 +4,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { initialCaptureState, processFix, pauseState, resumeState, type CaptureState, type PathPoint } from "../src/walk/capture";
 import { analyzeOnFoot } from "../src/lib/geo";
 import { base64UrlFromBytes, base64ToBase64Url, parseAuthCallback, CODE_RE } from "../src/lib/pkce";
+import { firstName, initials } from "../src/lib/names";
 
 // ---------- helpers ----------
 const M_PER_DEG_LAT = 111_320;
@@ -171,4 +172,26 @@ test("a gap adds neither distance nor time", () => {
   for (let i = 11; i < 21; i++) pts[i].t = new Date(Date.parse(pts[i].t) + 3600000).toISOString();
   const total = mileSplits(pts, 0).reduce((a, x) => a + x.fraction, 0);
   assert.ok(Math.abs(total - 0.95) < 0.01);
+});
+
+// ---------- addressing a hero by name ----------
+
+test("a hero's first name skips rank and middle initials", () => {
+  // Every hero screen used name.split(" ")[0], which reads a rank as the
+  // first name: "Give to SSgt." instead of "Give to Robert".
+  assert.equal(firstName("SSgt. Robert Ng"), "Robert");
+  assert.equal(firstName("Joshua L. Holm"), "Joshua");
+  // A multi-word rank ("Sgt. 1st Class") still is not fully understood — the
+  // rank simply stops being mistaken for the name. Storing rank as its own
+  // Hero field is the real fix; see the audit notes.
+  assert.notEqual(firstName("Sgt. 1st Class Dana Ruiz"), "Sgt.");
+  assert.equal(firstName("Maria Russo"), "Maria");
+  assert.equal(firstName(""), "your hero");
+  assert.equal(firstName(undefined), "your hero");
+  assert.equal(firstName("Dr. Jane Smith", "a backer"), "Jane");
+});
+
+test("initials agree with firstName about what is a title", () => {
+  assert.equal(initials("SSgt. Robert Ng"), "RN");
+  assert.equal(initials("Joshua L. Holm"), "JH");
 });

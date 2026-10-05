@@ -13,7 +13,7 @@ import { CheerToast, useCheers } from "../../components/CheerToast";
 import { base44 } from "../../lib/base44";
 import { WalkMap } from "../../components/WalkMap";
 import { analyzeOnFoot, formatElapsed, formatPace } from "../../lib/geo";
-import { backerCurrentCharge, followingThisWalk, money } from "../../lib/data";
+import { backerCurrentCharge, firstName, followingThisWalk, money } from "../../lib/data";
 import { MISSION_MILES } from "../../lib/config";
 import { onWalkUpdated } from "../../walk/locationTask";
 import { WalkError, finishWalk, openSettings, pauseWalk, resumeWalk, sendWalk, startWalk, type SendOutcome } from "../../walk/controller";
@@ -171,7 +171,7 @@ export default function WalkScreen() {
         {hero ? (
           <View style={styles.chip}>
             <HeroPhoto uri={hero.photo_url} name={hero.name} style={styles.chipPhoto} textSize={11} />
-            <Text style={styles.chipText}>For {hero.name.split(" ")[0]}</Text>
+            <Text style={styles.chipText}>For {firstName(hero.name)}</Text>
           </View>
         ) : null}
       </View>
@@ -257,7 +257,7 @@ export default function WalkScreen() {
             </View>
             {cheers.length > 0 ? (
               <Text style={styles.cheers} accessibilityLiveRegion="polite">
-                {cheers.length === 1 ? `${cheers[0].from_name} is cheering you on` : `${cheers.length} cheers · ${cheers.slice(0, 3).map((c) => c.from_name.split(" ")[0]).join(", ")}${cheers.length > 3 ? " and more" : ""}`}
+                {cheers.length === 1 ? `${cheers[0].from_name} is cheering you on` : `${cheers.length} cheers · ${cheers.slice(0, 3).map((c) => firstName(c.from_name, c.from_name)).join(", ")}${cheers.length > 3 ? " and more" : ""}`}
               </Text>
             ) : null}
 

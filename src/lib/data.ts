@@ -3,6 +3,10 @@ import { base44, callFunction, functionError } from "./base44";
 import { DORMANT_AFTER_DAYS, MISSION_MILES, SITE_URL } from "./config";
 import type { Walker } from "../auth/AuthContext";
 
+/* Pure name formatting lives in names.ts so the node tests can import it
+   without pulling in the Base44 client and the React Native runtime. */
+export { firstName, initials } from "./names";
+
 /**
  * Everything the screens read besides the Walker record, and the website's
  * math for it. The formulas here are copied from the website's
@@ -169,7 +173,7 @@ export const links = {
 };
 
 /** portal.js inviteMessageTemplates, word for word (both updated 2026-09-28). */
-export function inviteTemplates(walkerName: string, heroName: string, link: string) {
+export function inviteTemplates(heroName: string, link: string) {
   const heroLine = heroName ? ` for ${heroName}` : "";
   return [
     {
@@ -185,7 +189,13 @@ export function inviteTemplates(walkerName: string, heroName: string, link: stri
     {
       id: "milestone",
       label: "Milestone",
-      text: `Update: ${walkerName || "I"} just hit a new milestone on my Walk For A Hero walk${heroLine}! Help me push further — back my walk here: ${link}`,
+      /*
+       * First person, like the other two. It used to open with the walker's
+       * own name — "Rocci Stucci just hit a new milestone on my walk" — which
+       * is a message the walker sends from their own phone, so the third
+       * person subject fought the first person possessive (audit, 2026-10-05).
+       */
+      text: `Update: I just hit a new milestone on my Walk For A Hero walk${heroLine}! Help me push further — back my walk here: ${link}`,
     },
   ];
 }
@@ -198,12 +208,6 @@ export const money = (n?: number, cents = true) =>
     maximumFractionDigits: cents ? 2 : 0,
   })}`;
 
-/** First and last name initials; titles and middle initials ("Sgt.", "L.") are skipped. */
-export const initials = (name?: string) => {
-  const parts = (name || "").split(/\s+/).filter((p) => p && !p.endsWith("."));
-  const pick = parts.length > 2 ? [parts[0], parts[parts.length - 1]] : parts.slice(0, 2);
-  return pick.map((p) => p[0]!.toUpperCase()).join("") || "W";
-};
 
 export function heroSubtitle(h?: Hero | null) {
   if (!h) return "";

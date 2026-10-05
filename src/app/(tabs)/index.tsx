@@ -10,7 +10,7 @@ import { ProgressRing } from "../../components/ProgressRing";
 import { Avatar, Card, Header, MileLedger, Notice } from "../../components/ui";
 import { HeroPhoto } from "../../components/HeroPhoto";
 import { MISSION_MILES, SITE_URL } from "../../lib/config";
-import { heroSubtitle, initials, money, ordinal, pledgeSummary, walkerActivity, walkNumber } from "../../lib/data";
+import { firstName, heroSubtitle, initials, money, ordinal, pledgeSummary, walkerActivity, walkNumber } from "../../lib/data";
 import { openWalk } from "../../walk/store";
 import { colors, fonts, shadow, type } from "../../theme";
 import { CountUp, Rise, Shimmer } from "../../components/motion";
@@ -133,7 +133,7 @@ export default function Today() {
               You walked {miles.toFixed(1)} miles{hero ? ` for ${hero.name}` : ""}.
             </Text>
             <Text style={styles.againBody}>
-              Every one of those miles is on your record. If you have another {goal} in you, walk again — for {hero ? hero.name.split(" ")[0] : "your hero"} again, or for another hero.
+              Every one of those miles is on your record. If you have another {goal} in you, walk again — for {firstName(hero?.name)} again, or for another hero.
             </Text>
             <Pill label="Walk again" icon="arrow" onPress={() => router.push("/walk-again")} style={{ marginTop: 16 }} />
           </View>

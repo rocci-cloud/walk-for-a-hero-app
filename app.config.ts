@@ -18,7 +18,11 @@ const config: ExpoConfig = {
   name: IS_DEV ? "WFAH (dev)" : "Walk For A Hero",
   slug: "walk-for-a-hero",
   scheme: "walkforahero",
-  version: "0.2.0",
+  // The marketing version both stores show. 1.0.0 for the first public
+  // release — a 0.x on a store listing reads as unfinished, and Apple's
+  // reviewers treat it that way. Build numbers are separate and are
+  // auto-incremented by EAS (eas.json: appVersionSource "remote").
+  version: "1.0.0",
   orientation: "portrait",
   icon: "./assets/icon.png",
   userInterfaceStyle: "light",
@@ -31,6 +35,50 @@ const config: ExpoConfig = {
       NSLocationAlwaysAndWhenInUseUsageDescription: LOCATION_WHY,
       UIBackgroundModes: ["location"],
       ITSAppUsesNonExemptEncryption: false,
+    },
+    /*
+     * iOS privacy manifest. Apple rejects uploads that use a "required
+     * reason" API without declaring why (ITMS-91053), and Expo does NOT
+     * generate this automatically — it only copies what is written here into
+     * the native project.
+     *
+     * Every entry below is the union of the PrivacyInfo.xcprivacy files the
+     * app's own dependencies ship, read from node_modules rather than
+     * guessed, so the declaration matches what actually links in:
+     *   FileTimestamp  C617.1  expo-application, React, cxxreact, glog,
+     *                          RCT-Folly, boost
+     *                  0A2A.1, 3B52.1  expo-file-system
+     *   DiskSpace      E174.1, 85F4.1  expo-file-system
+     *   UserDefaults   CA92.1  expo-constants, expo-notifications,
+     *                          expo-task-manager, React
+     *   SystemBootTime 35F9.1  boost, react/timing
+     * Re-check this list whenever a native dependency is added or removed.
+     *
+     * The app tracks no one and shares nothing with data brokers, so
+     * NSPrivacyTracking is false and the collected-data list stays empty.
+     */
+    privacyManifests: {
+      NSPrivacyTracking: false,
+      NSPrivacyTrackingDomains: [],
+      NSPrivacyCollectedDataTypes: [],
+      NSPrivacyAccessedAPITypes: [
+        {
+          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategoryFileTimestamp",
+          NSPrivacyAccessedAPITypeReasons: ["C617.1", "0A2A.1", "3B52.1"],
+        },
+        {
+          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategoryDiskSpace",
+          NSPrivacyAccessedAPITypeReasons: ["E174.1", "85F4.1"],
+        },
+        {
+          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategoryUserDefaults",
+          NSPrivacyAccessedAPITypeReasons: ["CA92.1"],
+        },
+        {
+          NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategorySystemBootTime",
+          NSPrivacyAccessedAPITypeReasons: ["35F9.1"],
+        },
+      ],
     },
   },
   android: {

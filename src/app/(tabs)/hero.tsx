@@ -7,7 +7,7 @@ import { useWalkerData } from "../../auth/WalkerData";
 import { Pill } from "../../components/Pill";
 import { HeroPhoto } from "../../components/HeroPhoto";
 import { Card, emblem } from "../../components/ui";
-import { links, money } from "../../lib/data";
+import { firstName, links, money } from "../../lib/data";
 import { colors, shadow , type } from "../../theme";
 import { CountUp } from "../../components/motion";
 
@@ -68,7 +68,7 @@ export default function HeroTab() {
 
         <Card style={{ marginTop: 18 }}>
           <View style={styles.raisedHead}>
-            <Text style={styles.raisedLabel}>Raised for {hero.name.split(" ")[0]}</Text>
+            <Text style={styles.raisedLabel}>Raised for {firstName(hero.name)}</Text>
             <Text style={styles.raisedOf}>of {money(goal, false)}</Text>
           </View>
           <CountUp value={raised} format={(n) => money(n, false)} style={styles.raised} />
@@ -79,7 +79,7 @@ export default function HeroTab() {
         </Card>
 
         <Pill
-          label={`Give to ${hero.name.split(" ")[0]}`}
+          label={`Give to ${firstName(hero.name)}`}
           icon="arrow"
           onPress={() => WebBrowser.openBrowserAsync(links.giveToHero(hero))}
           style={{ marginTop: 16 }}
@@ -88,7 +88,7 @@ export default function HeroTab() {
 
         {story ? (
           <>
-            <Text style={[styles.eyebrow, { marginTop: 26 }]}>{hero.name.split(" ")[0]}’s story</Text>
+            <Text style={[styles.eyebrow, { marginTop: 26 }]}>{firstName(hero.name)}’s story</Text>
             {story.split(/\n\s*\n/).map((para, i) => (
               <Text key={i} style={styles.story}>
                 {para.trim()}
