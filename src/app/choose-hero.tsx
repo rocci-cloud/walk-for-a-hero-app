@@ -7,7 +7,7 @@ import { Pill } from "../components/Pill";
 import { HeroPhoto } from "../components/HeroPhoto";
 import { Header } from "../components/ui";
 import { base44 } from "../lib/base44";
-import { heroSubtitle, listHeroes, money, type Hero } from "../lib/data";
+import { firstName, heroSubtitle, listHeroes, money, type Hero } from "../lib/data";
 import { colors, fonts, shadow } from "../theme";
 
 /**
@@ -90,7 +90,7 @@ export default function ChooseHero() {
         ) : null}
 
         <Pill
-          label={hero ? `Walk for ${hero.name.split(" ")[0]}` : "Pick a hero"}
+          label={hero ? `Walk for ${firstName(hero.name)}` : "Pick a hero"}
           icon="arrow"
           disabled={!hero}
           busy={busy}

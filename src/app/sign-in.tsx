@@ -25,6 +25,19 @@ export default function SignIn() {
   const [error, setError] = useState("");
   const [detail, setDetail] = useState("");
 
+  /*
+   * Typing clears a standing error. Without this, "Enter your email and
+   * password." stayed on screen while the walker filled both fields in, so
+   * the form kept contradicting what they could see (audit, 2026-10-05).
+   */
+  const edit = (set: (v: string) => void) => (v: string) => {
+    set(v);
+    if (error) {
+      setError("");
+      setDetail("");
+    }
+  };
+
   const run = async (kind: "email" | "google" | "apple") => {
     setError("");
     setDetail("");
@@ -67,7 +80,7 @@ export default function SignIn() {
             <Text style={styles.label}>Email</Text>
             <TextInput
               value={email}
-              onChangeText={setEmail}
+              onChangeText={edit(setEmail)}
               autoCapitalize="none"
               autoComplete="email"
               keyboardType="email-address"
@@ -78,7 +91,7 @@ export default function SignIn() {
             <Text style={[styles.label, { marginTop: 14 }]}>Password</Text>
             <TextInput
               value={password}
-              onChangeText={setPassword}
+              onChangeText={edit(setPassword)}
               secureTextEntry
               autoComplete="password"
               textContentType="password"

@@ -8,6 +8,7 @@ import { HeroPhoto } from "../components/HeroPhoto";
 import { Header } from "../components/ui";
 import {
   checkWalkAgain,
+  firstName,
   heroSubtitle,
   isSettled,
   listHeroes,
@@ -66,7 +67,6 @@ export default function WalkAgain() {
 
   const chosen = heroes?.find((h) => h.id === picked) || null;
   const next = snap.number + 1;
-  const first = (name?: string) => (name || "").split(" ")[0] || "your hero";
 
   const start = async () => {
     if (!chosen || busy) return;
@@ -91,7 +91,7 @@ export default function WalkAgain() {
         <Header
           back={step !== "done"}
           eyebrow={step === "done" ? "WALKING AGAIN" : `YOUR ${ordinal(next).toUpperCase()} WALK`}
-          title={step === "choose" ? "Who will you walk for?" : step === "confirm" ? `${snap.goal} miles for ${first(chosen?.name)}` : "Thank you."}
+          title={step === "choose" ? "Who will you walk for?" : step === "confirm" ? `${snap.goal} miles for ${firstName(chosen?.name)}` : "Thank you."}
         />
 
         {loading ? (

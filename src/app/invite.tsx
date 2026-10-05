@@ -20,7 +20,7 @@ export default function Invite() {
   if (!walker) return null;
 
   const link = links.backWalker(walker);
-  const templates = inviteTemplates(walker.name, hero?.name || "", link);
+  const templates = inviteTemplates(hero?.name || "", link);
   const chosen = templates.find((t) => t.id === pick) || templates[0];
 
   const send = () =>

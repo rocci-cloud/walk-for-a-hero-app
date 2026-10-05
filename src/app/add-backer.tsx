@@ -28,6 +28,16 @@ export default function AddBacker() {
   const cap = max ? Number(max.replace(/[^0-9.]/g, "")) : 0;
   const valid = name.trim().length > 0 && perMile > 0 && perMile <= MAX_PLEDGE_PER_MILE && (!max || cap > 0);
 
+  /*
+   * Any edit clears a standing error. Without this the message sat there
+   * while the walker typed the fix — the form said "Add a name and a per-mile
+   * amount." with both fields filled in (audit, 2026-10-05).
+   */
+  const edit = (set: (v: string) => void) => (v: string) => {
+    set(v);
+    if (error) setError("");
+  };
+
   const save = async () => {
     if (!valid) {
       setError(perMile > MAX_PLEDGE_PER_MILE ? `Pledges go up to ${money(MAX_PLEDGE_PER_MILE, false)} a mile.` : "Add a name and a per-mile amount.");
@@ -64,14 +74,14 @@ export default function AddBacker() {
           <Header back eyebrow="Backers" title="Add a pledge" />
           <Text style={styles.body}>For a pledge someone made to you in person. It shows up on walkforahero.com too.</Text>
 
-          <Field label="Backer's name" value={name} onChangeText={setName} autoCapitalize="words" />
-          <Field label="Their email (optional)" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+          <Field label="Backer's name" value={name} onChangeText={edit(setName)} autoCapitalize="words" />
+          <Field label="Their email (optional)" value={email} onChangeText={edit(setEmail)} keyboardType="email-address" autoCapitalize="none" />
           <View style={{ flexDirection: "row", gap: 12 }}>
             <View style={{ flex: 1 }}>
-              <Field label="$ per mile" value={rate} onChangeText={setRate} keyboardType="decimal-pad" />
+              <Field label="$ per mile" value={rate} onChangeText={edit(setRate)} keyboardType="decimal-pad" />
             </View>
             <View style={{ flex: 1 }}>
-              <Field label="Most they'll give (optional)" value={max} onChangeText={setMax} keyboardType="decimal-pad" />
+              <Field label="Most they'll give (optional)" value={max} onChangeText={edit(setMax)} keyboardType="decimal-pad" />
             </View>
           </View>
           {perMile > 0 && perMile <= MAX_PLEDGE_PER_MILE ? (

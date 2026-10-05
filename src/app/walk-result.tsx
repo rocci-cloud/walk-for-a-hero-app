@@ -7,7 +7,7 @@ import { useWalkerData } from "../auth/WalkerData";
 import { Pill } from "../components/Pill";
 import { formatElapsed, formatPace } from "../lib/geo";
 import { MISSION_MILES } from "../lib/config";
-import { backerCurrentCharge, followingThisWalk, inviteTemplates, links, money, ordinal, pledgeSummary, PROJECTION_NOTE, walkNumber } from "../lib/data";
+import { backerCurrentCharge, firstName, followingThisWalk, inviteTemplates, links, money, ordinal, pledgeSummary, PROJECTION_NOTE, walkNumber } from "../lib/data";
 import { getWalk } from "../walk/store";
 import { colors, fonts, type } from "../theme";
 import { CountUp, Rise, StarBurst, curve, prefersReducedMotion, tap } from "../components/motion";
@@ -46,7 +46,7 @@ export default function WalkResult() {
   const secs = Math.round(walk.active_ms / 1000);
   const pace = formatPace(r.distance, secs);
   const left = Math.max(0, goal - after);
-  const heroFirst = hero?.name.split(" ")[0] || "your hero";
+  const heroFirst = firstName(hero?.name);
   const openBackers = followingThisWalk(backers).length;
 
   if (celebrate) {
@@ -71,7 +71,7 @@ export default function WalkResult() {
 
   const shareUpdate = () => {
     if (!walker) return;
-    const t = inviteTemplates(walker.name, hero?.name || "", links.backWalker(walker)).find((x) => x.id === "milestone")!;
+    const t = inviteTemplates(hero?.name || "", links.backWalker(walker)).find((x) => x.id === "milestone")!;
     Share.share({ message: t.text }).catch(() => {});
   };
 
@@ -190,7 +190,7 @@ function Celebration({ goal, heroName, walkNumber: n, onDone }: { goal: number; 
       </Animated.View>
       <Animated.Text style={[styles.celebrateKicker, rise(16)]}>{n > 1 ? `Your ${ordinal(n)} walk` : "Walk complete"}</Animated.Text>
       <Animated.Text style={[styles.celebrateTitle, rise(22)]}>
-        {goal} miles{heroName ? ` for ${heroName.split(" ")[0]}` : ""}.
+        {goal} miles{heroName ? ` for ${firstName(heroName)}` : ""}.
       </Animated.Text>
       <Animated.Text style={[styles.celebrateSub, rise(28)]}>Every one of them is on your record. Thank you.</Animated.Text>
       <Animated.Text style={[styles.celebrateHint, { opacity: v }]}>Tap to continue</Animated.Text>
