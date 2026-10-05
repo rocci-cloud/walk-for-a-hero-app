@@ -35,7 +35,9 @@ export const initials = (name?: string) => {
  * name field holds only the person's name — that split was made on the
  * website 2026-10-05, after the audit found rank embedded in `name` on six of
  * seven records while `rank` was ALSO populated, inconsistently ("Sgt." on
- * one record, "Sergeant" on another).
+ * one record, "Sergeant" on another). Ranks are now stored spelled out
+ * ("Staff Sergeant", not "SSgt."), because the website renders rank beside
+ * the branch on the hero card where an abbreviation reads as a typo.
  *
  * The startsWith guard is the safety net for a record that still carries the
  * old shape, so "SSgt." + "SSgt. Robert Ng" renders once, not twice.

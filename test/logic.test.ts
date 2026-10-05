@@ -200,8 +200,10 @@ test("initials agree with firstName about what is a title", () => {
    the person's name. These cover the composition and the safety net for a
    record that still carries the old embedded shape. */
 test("formalName puts the rank in front of the name", () => {
+  // Spelled out is how ranks are stored; abbreviated is still handled.
+  assert.equal(formalName("Robert Ng", "Staff Sergeant"), "Staff Sergeant Robert Ng");
+  assert.equal(formalName("James Carter", "Petty Officer 2nd Class"), "Petty Officer 2nd Class James Carter");
   assert.equal(formalName("Robert Ng", "SSgt."), "SSgt. Robert Ng");
-  assert.equal(formalName("James Carter", "PO2"), "PO2 James Carter");
 });
 
 test("formalName returns the bare name when there is no rank", () => {
@@ -211,6 +213,7 @@ test("formalName returns the bare name when there is no rank", () => {
 
 test("formalName does not double a rank still embedded in the name", () => {
   assert.equal(formalName("SSgt. Robert Ng", "SSgt."), "SSgt. Robert Ng");
+  assert.equal(formalName("Staff Sergeant Robert Ng", "Staff Sergeant"), "Staff Sergeant Robert Ng");
 });
 
 test("formalName is empty when there is no name", () => {
