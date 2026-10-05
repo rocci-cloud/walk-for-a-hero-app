@@ -27,3 +27,23 @@ export const initials = (name?: string) => {
   const pick = parts.length > 2 ? [parts[0], parts[parts.length - 1]] : parts.slice(0, 2);
   return pick.map((p) => p[0]!.toUpperCase()).join("") || "W";
 };
+
+/**
+ * A hero's name as it should be formally presented: rank first, then name.
+ *
+ * Rank lives in its own field on the Hero record (Base44 `Hero.rank`) and the
+ * name field holds only the person's name — that split was made on the
+ * website 2026-10-05, after the audit found rank embedded in `name` on six of
+ * seven records while `rank` was ALSO populated, inconsistently ("Sgt." on
+ * one record, "Sergeant" on another).
+ *
+ * The startsWith guard is the safety net for a record that still carries the
+ * old shape, so "SSgt." + "SSgt. Robert Ng" renders once, not twice.
+ */
+export const formalName = (name?: string, rank?: string) => {
+  const n = (name || "").trim();
+  const r = (rank || "").trim();
+  if (!n) return "";
+  if (!r) return n;
+  return n.toLowerCase().startsWith(r.toLowerCase()) ? n : `${r} ${n}`;
+};

@@ -9,7 +9,7 @@ import { useWalkerData } from "../auth/WalkerData";
 import { Pill } from "../components/Pill";
 import { emblem, Header } from "../components/ui";
 import { MISSION_MILES } from "../lib/config";
-import { heroSubtitle } from "../lib/data";
+import { heroFullName, heroSubtitle } from "../lib/data";
 import { getPoints, recentDone } from "../walk/store";
 import type { PathPoint } from "../walk/capture";
 import { colors } from "../theme";
@@ -54,7 +54,7 @@ export default function RouteArt() {
 
   const miles = walker?.miles_walked || 0;
   const goal = walker?.goal_miles || MISSION_MILES;
-  const heroLine = hero ? `for ${hero.name}${heroSubtitle(hero) ? `, ${heroSubtitle(hero).split(" · ")[0]}` : ""}.` : "for a paralyzed veteran.";
+  const heroLine = hero ? `for ${heroFullName(hero)}${heroSubtitle(hero) ? `, ${heroSubtitle(hero).split(" · ")[0]}` : ""}.` : "for a paralyzed veteran.";
 
   const toFile = () =>
     new Promise<string>((resolve, reject) => {

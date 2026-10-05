@@ -6,7 +6,11 @@ import { useWalkerData } from "../auth/WalkerData";
 import { Pill } from "../components/Pill";
 import { Header } from "../components/ui";
 import { base44 } from "../lib/base44";
-import { MAX_PLEDGE_PER_MILE, money } from "../lib/data";
+import {
+  heroFullName,
+  MAX_PLEDGE_PER_MILE,
+  money,
+} from "../lib/data";
 import { colors, fonts, type } from "../theme";
 
 /**
@@ -52,7 +56,7 @@ export default function AddBacker() {
         walker_name: walker.name,
         walker_slug: walker.slug,
         hero_id: walker.hero_supported_id || hero?.id || "",
-        hero_name: hero?.name || walker.hero_supported_name || "",
+        hero_name: heroFullName(hero) || walker.hero_supported_name || "",
         backer_name: name.trim(),
         backer_email: email.trim(),
         pledge_per_mile: perMile,

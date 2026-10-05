@@ -13,7 +13,7 @@ import { CheerToast, useCheers } from "../../components/CheerToast";
 import { base44 } from "../../lib/base44";
 import { WalkMap } from "../../components/WalkMap";
 import { analyzeOnFoot, formatElapsed, formatPace } from "../../lib/geo";
-import { backerCurrentCharge, firstName, followingThisWalk, money } from "../../lib/data";
+import { backerCurrentCharge, firstName, followingThisWalk, heroFullName, money } from "../../lib/data";
 import { MISSION_MILES } from "../../lib/config";
 import { onWalkUpdated } from "../../walk/locationTask";
 import { WalkError, finishWalk, openSettings, pauseWalk, resumeWalk, sendWalk, startWalk, type SendOutcome } from "../../walk/controller";
@@ -184,7 +184,7 @@ export default function WalkScreen() {
             <Text style={styles.readyTitle}>Ready to walk</Text>
             <InfoRow
               icon="star"
-              title={hero ? `Walking for ${hero.name}` : "Walking for your hero"}
+              title={hero ? `Walking for ${heroFullName(hero)}` : "Walking for your hero"}
               sub={`${Math.max(0, goal - before).toFixed(1)} miles to go · ${backers.length} backer${backers.length === 1 ? "" : "s"} following`}
             />
             {needsAlways ? (

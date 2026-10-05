@@ -7,7 +7,19 @@ import { useWalkerData } from "../auth/WalkerData";
 import { Pill } from "../components/Pill";
 import { formatElapsed, formatPace } from "../lib/geo";
 import { MISSION_MILES } from "../lib/config";
-import { backerCurrentCharge, firstName, followingThisWalk, inviteTemplates, links, money, ordinal, pledgeSummary, PROJECTION_NOTE, walkNumber } from "../lib/data";
+import {
+  backerCurrentCharge,
+  firstName,
+  followingThisWalk,
+  heroFullName,
+  inviteTemplates,
+  pledgeSummary,
+  links,
+  money,
+  ordinal,
+  PROJECTION_NOTE,
+  walkNumber,
+} from "../lib/data";
 import { getWalk } from "../walk/store";
 import { colors, fonts, type } from "../theme";
 import { CountUp, Rise, StarBurst, curve, prefersReducedMotion, tap } from "../components/motion";
@@ -53,7 +65,7 @@ export default function WalkResult() {
     return (
       <Celebration
         goal={goal}
-        heroName={hero?.name || ""}
+        heroName={heroFullName(hero)}
         walkNumber={walkNumber(walker)}
         onDone={() => setCelebrate(false)}
       />
@@ -71,7 +83,7 @@ export default function WalkResult() {
 
   const shareUpdate = () => {
     if (!walker) return;
-    const t = inviteTemplates(hero?.name || "", links.backWalker(walker)).find((x) => x.id === "milestone")!;
+    const t = inviteTemplates(heroFullName(hero), links.backWalker(walker)).find((x) => x.id === "milestone")!;
     Share.share({ message: t.text }).catch(() => {});
   };
 

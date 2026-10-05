@@ -14,7 +14,7 @@ import { changeWalkerPhoto, removeWalkerPhoto, PhotoError } from "../lib/photo";
 import { pushPermission, registerForPush, type PushState } from "../lib/push";
 import { Avatar, Header, Row } from "../components/ui";
 import { useWalkerData } from "../auth/WalkerData";
-import { completedWalks, initials, lifetimeMiles, money, walkNumber } from "../lib/data";
+import { completedWalks, heroFullName, initials, lifetimeMiles, money, walkNumber } from "../lib/data";
 import { runningVersion } from "../lib/appUpdates";
 
 /**
@@ -185,7 +185,7 @@ export default function Profile() {
           ) : null}
           <Row
             label="Walking for"
-            sub={hero?.name || "No hero chosen yet"}
+            sub={heroFullName(hero) || "No hero chosen yet"}
             onPress={hero ? () => router.navigate("/hero") : () => router.push("/choose-hero")}
           />
           <Row label="Change name or city" sub="On your walkforahero.com dashboard" onPress={() => WebBrowser.openBrowserAsync(`${SITE_URL}/dashboard`)} />
@@ -209,7 +209,7 @@ export default function Profile() {
                 />
               ))}
               <Row
-                label={`Walk ${walkNumber(walker)} · ${(walker?.miles_walked || 0).toFixed(1)} of ${walker?.goal_miles || 15} mi${hero ? ` for ${hero.name}` : ""}`}
+                label={`Walk ${walkNumber(walker)} · ${(walker?.miles_walked || 0).toFixed(1)} of ${walker?.goal_miles || 15} mi${hero ? ` for ${heroFullName(hero)}` : ""}`}
                 sub={(walker?.miles_walked || 0) >= (walker?.goal_miles || 15) ? "Complete" : "Walking now"}
               />
             </View>

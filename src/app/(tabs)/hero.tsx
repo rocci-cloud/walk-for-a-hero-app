@@ -7,7 +7,7 @@ import { useWalkerData } from "../../auth/WalkerData";
 import { Pill } from "../../components/Pill";
 import { HeroPhoto } from "../../components/HeroPhoto";
 import { Card, emblem } from "../../components/ui";
-import { firstName, links, money } from "../../lib/data";
+import { firstName, heroFullName, links, money } from "../../lib/data";
 import { colors, shadow , type } from "../../theme";
 import { CountUp } from "../../components/motion";
 
@@ -63,7 +63,7 @@ export default function HeroTab() {
           <Image source={emblem} style={{ width: 78, height: 78 }} />
         </View>
         <Text style={styles.eyebrow}>{hero.is_anchor ? "Founding hero" : "Your hero"}</Text>
-        <Text style={styles.name}>{hero.name}</Text>
+        <Text style={styles.name}>{heroFullName(hero)}</Text>
         <Text style={styles.sub}>{[hero.conflict, hero.branch].filter(Boolean).join(" · ")}</Text>
 
         <Card style={{ marginTop: 18 }}>

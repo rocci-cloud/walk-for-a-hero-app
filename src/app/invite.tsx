@@ -5,7 +5,11 @@ import { router } from "expo-router";
 import { useWalkerData } from "../auth/WalkerData";
 import { Pill } from "../components/Pill";
 import { Card, Header } from "../components/ui";
-import { inviteTemplates, links } from "../lib/data";
+import {
+  heroFullName,
+  inviteTemplates,
+  links,
+} from "../lib/data";
 import { colors, fonts, type } from "../theme";
 
 /**
@@ -20,7 +24,7 @@ export default function Invite() {
   if (!walker) return null;
 
   const link = links.backWalker(walker);
-  const templates = inviteTemplates(hero?.name || "", link);
+  const templates = inviteTemplates(heroFullName(hero), link);
   const chosen = templates.find((t) => t.id === pick) || templates[0];
 
   const send = () =>

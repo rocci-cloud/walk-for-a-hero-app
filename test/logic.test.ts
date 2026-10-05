@@ -4,7 +4,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { initialCaptureState, processFix, pauseState, resumeState, type CaptureState, type PathPoint } from "../src/walk/capture";
 import { analyzeOnFoot } from "../src/lib/geo";
 import { base64UrlFromBytes, base64ToBase64Url, parseAuthCallback, CODE_RE } from "../src/lib/pkce";
-import { firstName, initials } from "../src/lib/names";
+import { firstName, formalName, initials } from "../src/lib/names";
 
 // ---------- helpers ----------
 const M_PER_DEG_LAT = 111_320;
@@ -194,4 +194,30 @@ test("a hero's first name skips rank and middle initials", () => {
 test("initials agree with firstName about what is a title", () => {
   assert.equal(initials("SSgt. Robert Ng"), "RN");
   assert.equal(initials("Joshua L. Holm"), "JH");
+});
+
+/* Rank now lives in its own field (Hero.rank) and the name field holds only
+   the person's name. These cover the composition and the safety net for a
+   record that still carries the old embedded shape. */
+test("formalName puts the rank in front of the name", () => {
+  assert.equal(formalName("Robert Ng", "SSgt."), "SSgt. Robert Ng");
+  assert.equal(formalName("James Carter", "PO2"), "PO2 James Carter");
+});
+
+test("formalName returns the bare name when there is no rank", () => {
+  assert.equal(formalName("Joshua L. Holm", ""), "Joshua L. Holm");
+  assert.equal(formalName("Joshua L. Holm"), "Joshua L. Holm");
+});
+
+test("formalName does not double a rank still embedded in the name", () => {
+  assert.equal(formalName("SSgt. Robert Ng", "SSgt."), "SSgt. Robert Ng");
+});
+
+test("formalName is empty when there is no name", () => {
+  assert.equal(formalName("", "Sgt."), "");
+  assert.equal(formalName(undefined, undefined), "");
+});
+
+test("firstName still skips the rank if one is left in the name", () => {
+  assert.equal(firstName("SSgt. Robert Ng"), "Robert");
 });

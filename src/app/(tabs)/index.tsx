@@ -10,7 +10,7 @@ import { ProgressRing } from "../../components/ProgressRing";
 import { Avatar, Card, Header, MileLedger, Notice } from "../../components/ui";
 import { HeroPhoto } from "../../components/HeroPhoto";
 import { MISSION_MILES, SITE_URL } from "../../lib/config";
-import { firstName, heroSubtitle, initials, money, ordinal, pledgeSummary, walkerActivity, walkNumber } from "../../lib/data";
+import { firstName, heroFullName, heroSubtitle, initials, pledgeSummary, money, ordinal, walkerActivity, walkNumber } from "../../lib/data";
 import { openWalk } from "../../walk/store";
 import { colors, fonts, shadow, type } from "../../theme";
 import { CountUp, Rise, Shimmer } from "../../components/motion";
@@ -130,7 +130,7 @@ export default function Today() {
           <View style={[styles.againCard, shadow.card]}>
             <Text style={styles.againEyebrow}>{n > 1 ? `Your ${ordinal(n)} walk is complete` : "Walk complete"}</Text>
             <Text style={styles.againTitle}>
-              You walked {miles.toFixed(1)} miles{hero ? ` for ${hero.name}` : ""}.
+              You walked {miles.toFixed(1)} miles{hero ? ` for ${heroFullName(hero)}` : ""}.
             </Text>
             <Text style={styles.againBody}>
               Every one of those miles is on your record. If you have another {goal} in you, walk again — for {firstName(hero?.name)} again, or for another hero.
@@ -158,7 +158,7 @@ export default function Today() {
             <View style={styles.heroText}>
               <Text style={styles.heroEyebrow}>Walking for</Text>
               <Text style={styles.heroName} numberOfLines={1} adjustsFontSizeToFit>
-                {hero.name}
+                {heroFullName(hero)}
               </Text>
               <Text style={styles.heroSub} numberOfLines={2}>
                 {[heroSubtitle(hero), `${p.count} backer${p.count === 1 ? "" : "s"}`].filter(Boolean).join(" · ")}

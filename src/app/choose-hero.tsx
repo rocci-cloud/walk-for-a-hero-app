@@ -7,7 +7,14 @@ import { Pill } from "../components/Pill";
 import { HeroPhoto } from "../components/HeroPhoto";
 import { Header } from "../components/ui";
 import { base44 } from "../lib/base44";
-import { firstName, heroSubtitle, listHeroes, money, type Hero } from "../lib/data";
+import {
+  firstName,
+  type Hero,
+  heroFullName,
+  heroSubtitle,
+  listHeroes,
+  money,
+} from "../lib/data";
 import { colors, fonts, shadow } from "../theme";
 
 /**
@@ -38,7 +45,7 @@ export default function ChooseHero() {
     setBusy(true);
     setError("");
     try {
-      await base44.entities.Walker.update(walker.id, { hero_supported_id: hero.id, hero_supported_name: hero.name });
+      await base44.entities.Walker.update(walker.id, { hero_supported_id: hero.id, hero_supported_name: heroFullName(hero) });
       await reloadAll();
       router.back();
     } catch (e: any) {
@@ -71,7 +78,7 @@ export default function ChooseHero() {
               <HeroPhoto uri={h.photo_url} name={h.name} style={styles.photo} textSize={56} />
               <View style={{ padding: 16 }}>
                 {h.is_anchor ? <Text style={styles.badge}>FOUNDING HERO</Text> : null}
-                <Text style={styles.name}>{h.name}</Text>
+                <Text style={styles.name}>{heroFullName(h)}</Text>
                 <Text style={styles.sub}>{heroSubtitle(h)}</Text>
                 <View style={styles.pkg}>
                   <Text style={styles.pkgLabel}>EXOSKELETON PACKAGE</Text>

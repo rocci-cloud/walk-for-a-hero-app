@@ -5,7 +5,8 @@ import type { Walker } from "../auth/AuthContext";
 
 /* Pure name formatting lives in names.ts so the node tests can import it
    without pulling in the Base44 client and the React Native runtime. */
-export { firstName, initials } from "./names";
+import { formalName } from "./names";
+export { firstName, formalName, initials } from "./names";
 
 /**
  * Everything the screens read besides the Walker record, and the website's
@@ -214,6 +215,15 @@ export function heroSubtitle(h?: Hero | null) {
   const war = h.conflict ? h.conflict.replace(/\s*\(.*\)\s*$/, "") : "";
   return [war && `${war} veteran`, h.branch].filter(Boolean).join(" · ");
 }
+
+/**
+ * The hero's name with their rank, for anywhere the app names them formally:
+ * the hero screen headline, hero cards, the walking header, route art.
+ * Conversational copy ("Give to Robert", "15 miles for Robert") keeps using
+ * firstName() instead — a rank does not belong in the middle of a sentence
+ * addressed to the walker.
+ */
+export const heroFullName = (h?: Hero | null) => formalName(h?.name, h?.rank);
 
 /* ── Loading ────────────────────────────────────────────────────────── */
 

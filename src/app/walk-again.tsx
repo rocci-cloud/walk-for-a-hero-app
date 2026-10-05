@@ -9,6 +9,8 @@ import { Header } from "../components/ui";
 import {
   checkWalkAgain,
   firstName,
+  type Hero,
+  heroFullName,
   heroSubtitle,
   isSettled,
   listHeroes,
@@ -16,7 +18,6 @@ import {
   ordinal,
   startNewWalk,
   walkNumber,
-  type Hero,
 } from "../lib/data";
 import { colors, fonts, shadow } from "../theme";
 
@@ -122,7 +123,7 @@ export default function WalkAgain() {
                   <View style={styles.cardText}>
                     {h.id === snap.heroId ? <Text style={styles.badge}>YOUR HERO</Text> : null}
                     <Text style={styles.name} numberOfLines={1} adjustsFontSizeToFit>
-                      {h.name}
+                      {heroFullName(h)}
                     </Text>
                     {heroSubtitle(h) ? <Text style={styles.sub}>{heroSubtitle(h)}</Text> : null}
                     <Text style={styles.raised}>
@@ -145,7 +146,7 @@ export default function WalkAgain() {
                 snap.openPledges > 0
                   ? `Pledges from that walk stay settled at ${snap.miles.toFixed(1)} miles. The ${snap.openPledges === 1 ? "one" : snap.openPledges} you haven't collected yet can still be collected.`
                   : `Pledges from that walk stay settled at ${snap.miles.toFixed(1)} miles, exactly as your backers agreed.`,
-                `Your new walk starts at 0 of ${snap.goal} miles for ${chosen?.name}. Invite your backers to follow this one too.`,
+                `Your new walk starts at 0 of ${snap.goal} miles for ${heroFullName(chosen)}. Invite your backers to follow this one too.`,
               ].map((line, i) => (
                 <View key={i} style={[styles.stepRow, i > 0 && styles.stepRule]}>
                   <Text style={styles.stepNum}>{i + 1}</Text>
@@ -160,7 +161,7 @@ export default function WalkAgain() {
         ) : (
           <>
             <Text style={styles.story}>
-              Your {ordinal(next)} walk for {chosen?.name} has begun. Your walker page and link stay the same, and every mile you walked before is still on your record.
+              Your {ordinal(next)} walk for {heroFullName(chosen)} has begun. Your walker page and link stay the same, and every mile you walked before is still on your record.
             </Text>
             <Pill label="Go to Today" icon="arrow" onPress={() => router.dismissTo("/")} style={{ marginTop: 24 }} />
             <Pill label="Invite backers to this walk" variant="secondary" onPress={() => router.replace("/invite")} style={{ marginTop: 10 }} />
