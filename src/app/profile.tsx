@@ -90,6 +90,25 @@ export default function Profile() {
   const pref = (key: "notify_gifts" | "notify_walk_reviews" | "notify_reminders" | "notify_cheers") =>
     prefs[key] ?? ((walker as any)?.[key] !== false);
 
+  /*
+   * The switches follow the phone's permission. Until notifications are
+   * actually allowed, every one of them read as ON directly under a row
+   * saying "Notifications are off for this app" — so the screen promised
+   * alerts it could not send (audit, 2026-10-05). Off and uneditable until
+   * the permission is granted; the stored preference is left untouched, so
+   * turning notifications on restores whatever the walker chose before.
+   */
+  const pushOn = push === "on";
+  const notifySwitch = (key: "notify_gifts" | "notify_walk_reviews" | "notify_reminders" | "notify_cheers") => (
+    <Switch
+      value={pushOn && pref(key)}
+      disabled={!pushOn}
+      onValueChange={(v) => setPref(key, v)}
+      trackColor={{ true: colors.red, false: colors.paperDeep }}
+      thumbColor={colors.white}
+    />
+  );
+
   const setPref = async (key: "notify_gifts" | "notify_walk_reviews" | "notify_reminders" | "notify_cheers", value: boolean) => {
     if (!walker) return;
     setPrefs((p) => ({ ...p, [key]: value }));
@@ -208,22 +227,24 @@ export default function Profile() {
                   onPress={turnOnPush}
                 />
               ) : null}
+              <View style={{ opacity: pushOn ? 1 : 0.45 }}>
               <Row
                 label="Someone gives to my walk"
-                right={<Switch value={pref("notify_gifts")} onValueChange={(v) => setPref("notify_gifts", v)} trackColor={{ true: colors.red, false: colors.paperDeep }} thumbColor={colors.white} />}
+                right={notifySwitch("notify_gifts")}
               />
               <Row
                 label="A backer cheers me on mid-walk"
-                right={<Switch value={pref("notify_cheers")} onValueChange={(v) => setPref("notify_cheers", v)} trackColor={{ true: colors.red, false: colors.paperDeep }} thumbColor={colors.white} />}
+                right={notifySwitch("notify_cheers")}
               />
               <Row
                 label="A walk is reviewed"
-                right={<Switch value={pref("notify_walk_reviews")} onValueChange={(v) => setPref("notify_walk_reviews", v)} trackColor={{ true: colors.red, false: colors.paperDeep }} thumbColor={colors.white} />}
+                right={notifySwitch("notify_walk_reviews")}
               />
               <Row
                 label="I left a walk unfinished"
-                right={<Switch value={pref("notify_reminders")} onValueChange={(v) => setPref("notify_reminders", v)} trackColor={{ true: colors.red, false: colors.paperDeep }} thumbColor={colors.white} />}
+                right={notifySwitch("notify_reminders")}
               />
+              </View>
             </View>
           </>
         ) : null}
