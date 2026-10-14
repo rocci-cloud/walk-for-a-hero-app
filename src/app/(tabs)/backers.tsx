@@ -6,14 +6,14 @@ import * as WebBrowser from "expo-web-browser";
 import { useWalkerData } from "../../auth/WalkerData";
 import { Pill } from "../../components/Pill";
 import { Card, Header } from "../../components/ui";
-import { SITE_URL } from "../../lib/config";
 import { backerCurrentCharge, initials, isSettled, links, money, pledgeMiles, pledgeSummary, PROJECTION_NOTE } from "../../lib/data";
 import { colors, fonts, type } from "../../theme";
 import { CountUp, Rise, tap } from "../../components/motion";
 
 /**
  * Backers — the same records as "My Backers" on walkforahero.com/dashboard.
- * Per-mile pledges are logged by the walker; the running figure for each uses
+ * Every pledge is a card pledge made on walkforahero.com (founders' rule,
+ * 2026-10-14): walkers never log or collect money. The running figure uses
  * the website's backerCurrentCharge, so both show the same dollars.
  */
 export default function Backers() {
@@ -48,11 +48,11 @@ export default function Backers() {
         <Card style={{ marginTop: 18 }}>
           <Text style={styles.label}>Raised · money in hand</Text>
           <CountUp value={walker.total_raised || 0} format={(n) => money(n)} style={[styles.big, { color: colors.money }]} />
-          <Text style={styles.sub}>Collected pledges and direct gifts</Text>
+          <Text style={styles.sub}>Charged pledges and gifts</Text>
           <View style={styles.rule} />
           <View style={{ flexDirection: "row" }}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.label}>To collect</Text>
+              <Text style={styles.label}>Charged at completion</Text>
               <Text style={styles.mid}>{money(p.pledgedToCollect)}</Text>
             </View>
             <View style={{ flex: 1 }}>
@@ -70,7 +70,7 @@ export default function Backers() {
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>Every backer multiplies your miles.</Text>
             <Text style={styles.emptyBody}>
-              Send your link. Backers pledge per mile on walkforahero.com, or give once, and follow your progress there.
+              Send your link. Backers pledge per mile or a set amount by card on walkforahero.com. Their cards are charged only when you complete your 15 miles.
             </Text>
             <Pill label="Invite a backer" icon="arrow" onPress={() => router.push("/invite")} style={{ marginTop: 16 }} />
           </View>
@@ -95,9 +95,9 @@ export default function Backers() {
                   </Text>
                   <Text style={styles.backerSub}>
                     {b.collected
-                      ? `Collected ${money(b.collected_amount)}`
+                      ? `Charged ${money(b.collected_amount)}`
                       : isSettled(b)
-                        ? `Walk ${b.walk_number || 1} · ${money(backerCurrentCharge(b, pledgeMiles(b, miles)))} to collect`
+                        ? `Walk ${b.walk_number || 1} · ${money(backerCurrentCharge(b, pledgeMiles(b, miles)))} pledged`
                         : `${money(backerCurrentCharge(b, miles))} so far${b.max_pledge ? ` · up to ${money(b.max_pledge, false)}` : ""}`}
                   </Text>
                 </View>
@@ -111,10 +111,7 @@ export default function Backers() {
           </View>
         )}
 
-        <Pill label="Add a pledge by hand" variant="secondary" onPress={() => router.push("/add-backer")} style={{ marginTop: 18 }} />
-        <Pressable onPress={() => WebBrowser.openBrowserAsync(`${SITE_URL}/dashboard`)} style={{ paddingVertical: 14, alignItems: "center" }}>
-          <Text style={styles.link}>Collect pledges on walkforahero.com</Text>
-        </Pressable>
+        <View style={{ height: 18 }} />
         <Text style={styles.note}>{PROJECTION_NOTE}</Text>
       </ScrollView>
     </SafeAreaView>

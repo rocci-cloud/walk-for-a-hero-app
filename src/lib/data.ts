@@ -123,6 +123,21 @@ export function ordinal(n: number) {
   return `${n}${({ 1: "st", 2: "nd", 3: "rd" } as Record<number, string>)[n % 10] || "th"}`;
 }
 
+/**
+ * complete-walk (website, 2026-10-14). The ONE action that charges backers'
+ * cards. The server refuses it below the goal; the app also keeps the button
+ * locked until then.
+ */
+export async function completeWalk(): Promise<{ completed_at?: string; under_review?: boolean }> {
+  try {
+    return (await callFunction("complete-walk", {})) || {};
+  } catch (e: any) {
+    throw new Error(functionError(e) || e?.message || "Couldn't reach walkforahero.com. Check your connection and try again.");
+  }
+}
+
+export const isWalkCompleted = (w?: Walker | null) => !!w?.current_walk_completed_at;
+
 /** start-new-walk { action: "check" } — can this walker start another walk now? */
 export async function checkWalkAgain(): Promise<{ eligible: boolean; reason: string }> {
   try {
@@ -161,7 +176,7 @@ export function pledgeSummary(backers: Backer[], miles: number) {
   };
 }
 
-export const PROJECTION_NOTE = "Dollar figures here are projections from pledged per-mile amounts, not funds collected.";
+export const PROJECTION_NOTE = "Every pledge is made by card. Backers are charged automatically when you press Complete My 15 Miles. You never handle money.";
 
 /* ── Links (same URLs the website uses) ─────────────────────────────── */
 
@@ -180,12 +195,12 @@ export function inviteTemplates(heroName: string, link: string) {
     {
       id: "direct",
       label: "Direct ask",
-      text: `I need your help. I'm walking 15 miles with Walk For A Hero${heroLine} — every mile funds an exoskeleton that lets a paralyzed veteran stand and walk again. Would you back me at $1–$5 a mile? Reply with a number and I'll add you, or give once here: ${link}`,
+      text: `I need your help. I'm walking 15 miles with Walk For A Hero${heroLine} — every mile funds an exoskeleton that lets a paralyzed veteran stand and walk again. Would you back me at $1–$5 a mile? Pledge by card here, and you're only charged when I complete all 15 miles: ${link}`,
     },
     {
       id: "casual",
       label: "Casual",
-      text: `Hey! I'm walking 15 miles${heroLine} to help fund a life-changing exoskeleton for a paralyzed veteran. Would you back me a few bucks a mile? Reply with a number and I'll add you, or give once here: ${link}`,
+      text: `Hey! I'm walking 15 miles${heroLine} to help fund a life-changing exoskeleton for a paralyzed veteran. Would you back me a few bucks a mile? Pledge by card here, and you're only charged when I finish all 15: ${link}`,
     },
     {
       id: "milestone",

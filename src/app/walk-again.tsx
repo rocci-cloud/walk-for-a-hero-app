@@ -29,7 +29,7 @@ import { colors, fonts, shadow } from "../theme";
  *             "the same hero again" is one tap; other heroes follow.
  *   confirm — says exactly what happens: the finished walk stays on their
  *             record, its pledges stay settled at the miles walked (and can
- *             still be collected), and the new walk starts at 0.
+ *             still be charged), and the new walk starts at 0.
  *   done    — a quiet thank-you, then back to Today.
  *
  * start-new-walk does all of it on the server; this screen writes nothing.
@@ -144,7 +144,7 @@ export default function WalkAgain() {
               {[
                 `Your ${ordinal(snap.number)} walk is saved to your record: ${snap.miles.toFixed(1)} miles for ${snap.heroName}.`,
                 snap.openPledges > 0
-                  ? `Pledges from that walk stay settled at ${snap.miles.toFixed(1)} miles. The ${snap.openPledges === 1 ? "one" : snap.openPledges} you haven't collected yet can still be collected.`
+                  ? `Pledges from that walk stay settled at ${snap.miles.toFixed(1)} miles. Any not yet charged are charged automatically to the backers' cards.`
                   : `Pledges from that walk stay settled at ${snap.miles.toFixed(1)} miles, exactly as your backers agreed.`,
                 `Your new walk starts at 0 of ${snap.goal} miles for ${heroFullName(chosen)}. Invite your backers to follow this one too.`,
               ].map((line, i) => (

@@ -191,7 +191,7 @@ export default function WalkScreen() {
               <InfoRow
                 icon="pin"
                 title={Platform.OS === "ios" ? "Next, allow location “Always”" : "Next, allow location “All the time”"}
-                sub="So your miles keep counting with the screen locked. Location is only used between Start and Finish, and your route stays private."
+                sub="So your miles keep counting with the screen locked. Location is only used between Start and End Walk, and your route stays private."
               />
             ) : (
               <InfoRow icon="lock" title="Lock your phone and pocket it" sub="Tracking keeps running with the screen off. Your route stays private." />
@@ -278,7 +278,7 @@ export default function WalkScreen() {
                   )}
                   <HoldToFinish busy={busy === "finish"} onDone={doFinish} onTap={() => setHoldHint(true)} />
                 </View>
-                {holdHint && <Text style={styles.hint}>Press and hold Finish to end your walk.</Text>}
+                {holdHint && <Text style={styles.hint}>Press and hold to end today’s walk and save its miles. Nobody is charged until you press Complete My 15 Miles on Today.</Text>}
               </>
             )}
 
@@ -330,8 +330,8 @@ function HoldToFinish({ busy, onDone, onTap }: { busy: boolean; onDone: () => vo
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="Finish walk"
-      accessibilityHint="Press and hold to finish and send your walk"
+      accessibilityLabel="End today's walk"
+      accessibilityHint="Press and hold to end today's walk and save its miles"
       disabled={busy}
       delayLongPress={900}
       onPressIn={() => (held.current = false)}
@@ -343,7 +343,7 @@ function HoldToFinish({ busy, onDone, onTap }: { busy: boolean; onDone: () => vo
       onPress={() => !held.current && onTap()}
       style={({ pressed }) => [styles.finish, shadow.red, pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] }, busy && { opacity: 0.6 }]}
     >
-      <Text style={styles.finishText}>{busy ? "Sending…" : "Finish"}</Text>
+      <Text style={styles.finishText}>{busy ? "Sending…" : "End Walk"}</Text>
       {!busy && <Text style={styles.finishSub}>Press and hold</Text>}
     </Pressable>
   );

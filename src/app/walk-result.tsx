@@ -134,7 +134,7 @@ export default function WalkResult() {
 
         <View style={styles.quote}>
           <Text style={styles.quoteText}>
-            {left > 0 ? `${left.toFixed(1)} miles left. Every one of them is for ${heroFirst}.` : `All ${goal} miles done. ${heroFirst} thanks you.`}
+            {left > 0 ? `${left.toFixed(1)} miles left. Every one of them is for ${heroFirst}.` : `All ${goal} miles done. Press Complete My ${goal} Miles on Today to finish your walk and charge your backers' cards.`}
           </Text>
         </View>
 
