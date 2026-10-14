@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AccessibilityInfo, Animated, Easing, Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { AccessibilityInfo, Animated, Easing, Image, Linking, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { router } from "expo-router";
@@ -225,7 +225,7 @@ export default function Welcome() {
           </View>
           <View style={styles.grid}>
             <Tile icon="hero" title="Meet our heroes" sub="The veterans we serve" hint="Opens our heroes on walkforahero.com" onPress={() => open("/heroes")} />
-            <Tile icon="give" title="Give today" sub="Fund an exoskeleton" hint="Opens secure giving on walkforahero.com" onPress={() => open("/donate")} />
+            <Tile icon="give" title="Give today" sub="Fund an exoskeleton" hint="Opens secure giving on walkforahero.com" onPress={() => Linking.openURL(`${SITE_URL}/donate`)} />
           </View>
 
           <Text style={[styles.sheetEyebrow, { marginTop: 30 }]}>HOW IT WORKS</Text>

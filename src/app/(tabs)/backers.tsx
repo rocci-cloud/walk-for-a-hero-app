@@ -17,7 +17,7 @@ import { CountUp, Rise, tap } from "../../components/motion";
  * the website's backerCurrentCharge, so both show the same dollars.
  */
 export default function Backers() {
-  const { walker, backers, reloadAll } = useWalkerData();
+  const { walker, backers, gifts, reloadAll } = useWalkerData();
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = async () => {
@@ -29,7 +29,7 @@ export default function Backers() {
   if (!walker) return <SafeAreaView style={styles.safe} />;
 
   const miles = walker.miles_walked || 0;
-  const p = pledgeSummary(backers, miles);
+  const p = pledgeSummary(backers, miles, gifts);
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -53,7 +53,7 @@ export default function Backers() {
           <View style={{ flexDirection: "row" }}>
             <View style={{ flex: 1 }}>
               <Text style={styles.label}>Charged at completion</Text>
-              <Text style={styles.mid}>{money(p.pledgedToCollect)}</Text>
+              <Text style={styles.mid}>{money(p.chargeAtCompletion)}</Text>
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.label}>Per mile</Text>
@@ -66,7 +66,7 @@ export default function Backers() {
         </Card>
         </Rise>
 
-        {backers.length === 0 ? (
+        {backers.length === 0 && gifts.length === 0 ? (
           <View style={styles.empty}>
             <Text style={styles.emptyTitle}>Every backer multiplies your miles.</Text>
             <Text style={styles.emptyBody}>
@@ -76,7 +76,7 @@ export default function Backers() {
           </View>
         ) : (
           <View style={{ marginTop: 18 }}>
-            <Text style={styles.section}>Pledges · {backers.length}</Text>
+            {backers.length > 0 && <Text style={styles.section}>Per-mile pledges · {backers.length}</Text>}
             {[...backers.filter((b) => !isSettled(b)), ...backers.filter((b) => isSettled(b))].map((b, i, list) => (
               <View key={b.id}>
               {isSettled(b) && (i === 0 || !isSettled(list[i - 1])) ? <Text style={[styles.section, { marginTop: 14 }]}>From earlier walks</Text> : null}
@@ -111,6 +111,23 @@ export default function Backers() {
           </View>
         )}
 
+        {gifts.length > 0 && (
+          <View style={{ marginTop: 18 }}>
+            <Text style={styles.section}>Set-amount pledges & gifts · {gifts.length}</Text>
+            {gifts.map((g) => (
+              <View key={g.id} style={styles.backer}>
+                <View style={styles.initials}>
+                  <Text style={styles.initialsText}>{initials(g.donor_name)}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.backerName} numberOfLines={1}>{g.donor_name}</Text>
+                  <Text style={styles.backerSub}>{g.pledged ? "Charged when you press Complete" : g.is_recurring ? "Monthly gift · charged" : "Gift · charged"}</Text>
+                </View>
+                <Text style={styles.rate}>{money(g.amount)}</Text>
+              </View>
+            ))}
+          </View>
+        )}
         <View style={{ height: 18 }} />
         <Text style={styles.note}>{PROJECTION_NOTE}</Text>
       </ScrollView>

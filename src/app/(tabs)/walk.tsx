@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import * as Haptics from "expo-haptics";
@@ -29,7 +29,7 @@ import { colors, fonts, shadow, type } from "../../theme";
  */
 export default function WalkScreen() {
   const insets = useSafeAreaInsets();
-  const { state } = useAuth();
+  const { state, expireSession } = useAuth();
   const { walker, hero, backers, reloadAll } = useWalkerData();
   const [walk, setWalk] = useState<WalkRow | null>(null);
   const [points, setPoints] = useState<PathPoint[]>([]);
@@ -51,7 +51,7 @@ export default function WalkScreen() {
   useFocusEffect(
     useCallback(() => {
       reload();
-      Location.getBackgroundPermissionsAsync()
+      Location.getForegroundPermissionsAsync()
         .then((p) => setNeedsAlways(p.status !== "granted"))
         .catch(() => {});
       const off = onWalkUpdated(reload);
@@ -106,6 +106,14 @@ export default function WalkScreen() {
   const onStart = () =>
     guard("start", async () => {
       setOutcome(null);
+      // Miles after Complete would land on a walk whose backers were already
+      // charged; a non-walker's walk would be refused by the server.
+      if (walker?.current_walk_completed_at) {
+        throw new WalkError("You've completed this walk. Start your next one from Today with Walk again.");
+      }
+      if (!walker && !(state.status === "signed_in" && state.walkerError === "offline")) {
+        throw new WalkError("This account isn't registered as a walker yet. Sign up on walkforahero.com with the same email first.");
+      }
       const email = state.status === "signed_in" ? state.user.email : "";
       await startWalk(email);
       setNeedsAlways(false);
@@ -123,6 +131,7 @@ export default function WalkScreen() {
       const id = walk.id;
       const out = await finishWalk(id);
       setOutcome(out);
+      if (out.kind === "needs_sign_in") await expireSession(); // walk stays saved; sent after sign-in
       if (walker) base44.entities.Walker.update(walker.id, { is_walking: false, live_miles: 0 }).catch(() => {});
       if (out.kind === "done") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -137,6 +146,7 @@ export default function WalkScreen() {
       const id = walk.id;
       const out = await sendWalk(id);
       setOutcome(out);
+      if (out.kind === "needs_sign_in") await expireSession();
       if (out.kind === "done") {
         reloadAll();
         router.push({ pathname: "/walk-result", params: { id } });
@@ -190,8 +200,8 @@ export default function WalkScreen() {
             {needsAlways ? (
               <InfoRow
                 icon="pin"
-                title={Platform.OS === "ios" ? "Next, allow location “Always”" : "Next, allow location “All the time”"}
-                sub="So your miles keep counting with the screen locked. Location is only used between Start and End Walk, and your route stays private."
+                title="Next, allow location while using the app"
+                sub="Your miles keep counting with the screen locked. Location is only used between Start and End Walk, and your route stays private."
               />
             ) : (
               <InfoRow icon="lock" title="Lock your phone and pocket it" sub="Tracking keeps running with the screen off. Your route stays private." />

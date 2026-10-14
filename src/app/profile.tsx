@@ -140,6 +140,13 @@ export default function Profile() {
 
   const onDelete = async () => {
     if (typed.trim().toUpperCase() !== "DELETE") return;
+    if (unsentWalk()) {
+      Alert.alert(
+        "You have a walk that isn't counted yet",
+        "End and send it on the Walk tab first, or delete it there. Deleting your account removes walks stored on this phone.",
+      );
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -210,7 +217,7 @@ export default function Profile() {
               ))}
               <Row
                 label={`Walk ${walkNumber(walker)} · ${(walker?.miles_walked || 0).toFixed(1)} of ${walker?.goal_miles || 15} mi${hero ? ` for ${heroFullName(hero)}` : ""}`}
-                sub={(walker?.miles_walked || 0) >= (walker?.goal_miles || 15) ? "Complete" : "Walking now"}
+                sub={walker?.current_walk_completed_at ? "Complete" : (walker?.miles_walked || 0) >= (walker?.goal_miles || 15) ? "15 miles walked · press Complete on Today" : "Walking now"}
               />
             </View>
           </>

@@ -32,7 +32,7 @@ import { emblem } from "../components/ui";
  */
 export default function WalkResult() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { walker, hero, backers } = useWalkerData();
+  const { walker, hero, backers, gifts } = useWalkerData();
   const walk = useMemo(() => (id ? getWalk(String(id)) : null), [id]);
   const r = walk?.result;
   // The 15-mile moment: shown once, full screen, before the numbers.
@@ -54,7 +54,7 @@ export default function WalkResult() {
   const before = Math.max(0, after - r.distance);
   const goal = walker?.goal_miles || MISSION_MILES;
   const earned = followingThisWalk(backers).reduce((s, b) => s + backerCurrentCharge(b, after) - backerCurrentCharge(b, before), 0);
-  const total = pledgeSummary(backers, after).pledgedToCollect;
+  const total = pledgeSummary(backers, after, gifts).chargeAtCompletion;
   const secs = Math.round(walk.active_ms / 1000);
   const pace = formatPace(r.distance, secs);
   const left = Math.max(0, goal - after);
@@ -140,8 +140,12 @@ export default function WalkResult() {
 
         {left <= 0 && walker ? (
           <>
-            {/* Walk again (2026-09-28): the moment the walk is finished. */}
-            <Pill label="Walk again for a hero" icon="arrow" onPress={() => router.replace("/walk-again")} style={{ marginTop: 22 }} />
+            {/* 15 miles reached: Complete (on Today) charges the backers; Walk again only after that. */}
+            {walker.current_walk_completed_at ? (
+              <Pill label="Walk again for a hero" icon="arrow" onPress={() => router.replace("/walk-again")} style={{ marginTop: 22 }} />
+            ) : (
+              <Pill label={`Complete My ${goal} Miles`} icon="arrow" onPress={() => router.navigate("/")} style={{ marginTop: 22 }} />
+            )}
             <Pill label="See the replay" variant="light" onPress={() => router.replace({ pathname: "/replay", params: { id: walk.id } })} style={{ marginTop: 10 }} />
           </>
         ) : (

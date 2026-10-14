@@ -3,6 +3,8 @@ import { base44, httpStatus } from "../lib/base44";
 import { clearSession, restoreSession } from "../lib/session";
 import { wipeAll } from "../walk/store";
 import { registerForPush, unregisterPush } from "../lib/push";
+import * as Notifications from "expo-notifications";
+import { stopUpdates } from "../walk/controller";
 
 /**
  * Who is signed in, and their Walker record.
@@ -49,6 +51,8 @@ type Ctx = {
   state: AuthState;
   refresh: () => Promise<void>;
   signOut: () => Promise<void>;
+  /** Session expired (401): sign out but KEEP walks stored on the phone, so a queued walk is sent after signing back in. */
+  expireSession: () => Promise<void>;
   /** Called after sign-in or sign-up succeeds. */
   signedIn: () => Promise<void>;
 };
@@ -56,11 +60,14 @@ type Ctx = {
 const AuthCtx = createContext<Ctx | null>(null);
 
 async function loadWalker(email: string): Promise<{ walker: Walker | null; error?: string }> {
-  const list: Walker[] = await base44.entities.Walker.filter(
-    { email: email.trim().toLowerCase(), active: true },
+  // Same rule as every backend function: a record is active unless
+  // active === false (records without the field are active). 2026-10-14.
+  const all: (Walker & { active?: boolean; deleted_at?: string })[] = await base44.entities.Walker.filter(
+    { email: email.trim().toLowerCase() },
     "-created_date",
-    5,
+    10,
   );
+  const list = (all || []).filter((w) => w.active !== false && !w.deleted_at);
   if (!list?.length) return { walker: null };
   if (list.length > 1) {
     // Same rule as log-walk-miles: more than one active record is a data
@@ -107,6 +114,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await unregisterPush(); // while still signed in, so the server accepts it
+    await stopUpdates().catch(() => {}); // never keep GPS running for a signed-out user
+    Notifications.dismissAllNotificationsAsync().catch(() => {});
     await clearSession();
     try {
       wipeAll();
@@ -116,7 +125,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState({ status: "signed_out" });
   }, []);
 
-  const value = useMemo<Ctx>(() => ({ state, refresh: load, signOut, signedIn: load }), [state, load, signOut]);
+  const expireSession = useCallback(async () => {
+    await clearSession();
+    setState({ status: "signed_out" });
+  }, []);
+
+  const value = useMemo<Ctx>(() => ({ state, refresh: load, signOut, expireSession, signedIn: load }), [state, load, signOut, expireSession]);
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }
 

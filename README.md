@@ -65,7 +65,7 @@ Installed builds get JavaScript/screen fixes automatically: every push to `main`
 Do this on one iPhone and one Android phone:
 
 1. Sign in with a walker account. Try email, then Google.
-2. On **Walk**, press Start. Allow location **"Always" / "Allow all the time"**.
+2. On **Walk**, press Start. Allow location **While using the app** (Always is no longer needed: the walk keeps recording with the screen locked through the iOS location background mode and the Android foreground service).
 3. Lock the phone, put it in a pocket, and walk **at least 1 mile** outdoors. Include one stop of about 2 minutes.
 4. Halfway, turn on airplane mode for a few minutes, then turn it off.
 5. Unlock and press Finish.

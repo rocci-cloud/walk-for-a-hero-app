@@ -46,6 +46,26 @@ export type Backer = {
   final_miles?: number | null;
 };
 
+/**
+ * A set-amount card pledge or a direct gift to this walker (a Donation row,
+ * read through the website's list-walker-donations function because
+ * Donation is staff-only). Per-mile pledges are Backers instead.
+ */
+export type Gift = {
+  id: string;
+  donor_name: string;
+  amount: number;
+  is_recurring?: boolean;
+  created_date?: string;
+  /** Card saved, charged when the walker presses Complete. False = already charged. */
+  pledged?: boolean;
+};
+
+export async function listGifts(): Promise<Gift[]> {
+  const r: any = await callFunction("list-walker-donations", {});
+  return Array.isArray(r?.donations) ? r.donations : [];
+}
+
 /* ── Activity (portal.js walkerActivityStatus) ──────────────────────── */
 
 /**
@@ -159,10 +179,21 @@ export async function startNewWalk(heroId: string) {
   }
 }
 
-export function pledgeSummary(backers: Backer[], miles: number) {
+export function pledgeSummary(backers: Backer[], miles: number, gifts: Gift[] = []) {
   const open = backers.filter((b) => !b.collected);
   const following = open.filter((b) => !isSettled(b));
+  const pledgedGifts = gifts.filter((g) => g.pledged);
   return {
+    /**
+     * What the backers' cards will actually be charged when the walker
+     * presses Complete: each per-mile pledge at its full 15-mile figure
+     * (what create-checkout-session saved), plus set-amount pledges.
+     */
+    chargeAtCompletion:
+      open.reduce((s, b) => s + backerCurrentCharge(b, isSettled(b) ? Number(b.final_miles) : MISSION_MILES), 0) +
+      pledgedGifts.reduce((s, g) => s + (Number(g.amount) || 0), 0),
+    /** Set-amount card pledges waiting for Complete. */
+    giftPledges: pledgedGifts.length,
     /** Backers following the current walk. */
     count: backers.filter((b) => !isSettled(b)).length,
     /** Uncollected pledges from earlier walks, still collectible. */
@@ -274,17 +305,22 @@ export async function listBackers(w: Walker): Promise<Backer[]> {
 export function useWalkerExtras(walker: Walker | null) {
   const [hero, setHero] = useState<Hero | null>(null);
   const [backers, setBackers] = useState<Backer[]>([]);
+  const [gifts, setGifts] = useState<Gift[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   const fetchBoth = useCallback(
-    () => (walker ? Promise.all([resolveHero(walker).catch(() => null), listBackers(walker).catch(() => null)]) : Promise.resolve(null)),
+    () =>
+      walker
+        ? Promise.all([resolveHero(walker).catch(() => null), listBackers(walker).catch(() => null), listGifts().catch(() => null)])
+        : Promise.resolve(null),
     [walker],
   );
 
-  const apply = (r: [Hero | null, Backer[] | null] | null) => {
+  const apply = (r: [Hero | null, Backer[] | null, Gift[] | null] | null) => {
     if (!r) return;
     setHero(r[0]);
     if (r[1]) setBackers(r[1]);
+    if (r[2]) setGifts(r[2]);
     setLoaded(true);
   };
 
@@ -301,5 +337,5 @@ export function useWalkerExtras(walker: Walker | null) {
     };
   }, [fetchBoth]);
 
-  return { hero, backers, loaded, reload };
+  return { hero, backers, gifts, loaded, reload };
 }
