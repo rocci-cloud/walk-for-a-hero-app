@@ -41,7 +41,6 @@ function Gate() {
           <Stack.Screen name="choose-hero" />
           <Stack.Screen name="walk-again" />
           <Stack.Screen name="invite" />
-          <Stack.Screen name="add-backer" options={{ presentation: "modal" }} />
           <Stack.Screen name="walk-result" options={{ contentStyle: { backgroundColor: colors.ink }, gestureEnabled: false }} />
           <Stack.Screen name="replay" options={{ contentStyle: { backgroundColor: colors.ink } }} />
           <Stack.Screen name="route-art" />

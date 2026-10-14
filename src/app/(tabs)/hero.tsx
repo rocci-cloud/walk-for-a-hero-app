@@ -75,7 +75,7 @@ export default function HeroTab() {
           <View style={styles.track}>
             <View style={[styles.fill, { width: `${Math.max(pct * 100, raised > 0 ? 2 : 0)}%` }]} />
           </View>
-          <Text style={styles.note}>Collected gifts only — the same figure as walkforahero.com.</Text>
+          <Text style={styles.note}>Charged gifts only — the same figure as walkforahero.com.</Text>
         </Card>
 
         <Pill

@@ -19,7 +19,9 @@ There's one backend, the website's Base44 app (`6a5ea09f92a56e347e3049b7`), and 
 | Email sign-in | Base44 login API (same as walkforahero.com/login) |
 | Google / Apple sign-in | walkforahero.com/app-auth → `app-auth-handoff` (one-time code + PKCE) |
 | Today screen | `Walker` record, `Hero` record |
-| Finish a walk | `log-walk-miles` (offline-style finish with a `client_token`, credited exactly once) |
+| End a walk (saves that outing's miles) | `log-walk-miles` (offline-style finish with a `client_token`, credited exactly once) |
+| Complete My 15 Miles | `complete-walk` — the only action that charges backers' cards; locked below 15 miles |
+| Backers | Read only. Every pledge is a card pledge made on walkforahero.com; walkers never log or collect money |
 | Delete account | `delete-account` (same as the website's button) |
 
 ## How a walk is recorded

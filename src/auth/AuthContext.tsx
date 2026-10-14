@@ -34,6 +34,8 @@ export type Walker = {
   walk_number?: number;
   current_walk_started_at?: string;
   completed_walks?: import("../lib/data").CompletedWalk[];
+  /** Set when the walker pressed Complete My 15 Miles (website complete-walk). Cards are charged only after this. */
+  current_walk_completed_at?: string;
 };
 
 type User = { id: string; email: string; full_name?: string; role?: string };

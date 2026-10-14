@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router, useFocusEffect } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
@@ -10,7 +10,7 @@ import { ProgressRing } from "../../components/ProgressRing";
 import { Avatar, Card, Header, MileLedger, Notice } from "../../components/ui";
 import { HeroPhoto } from "../../components/HeroPhoto";
 import { MISSION_MILES, SITE_URL } from "../../lib/config";
-import { firstName, heroFullName, heroSubtitle, initials, pledgeSummary, money, ordinal, walkerActivity, walkNumber } from "../../lib/data";
+import { completeWalk, firstName, heroFullName, heroSubtitle, initials, isWalkCompleted, pledgeSummary, money, ordinal, walkerActivity, walkNumber } from "../../lib/data";
 import { openWalk } from "../../walk/store";
 import { colors, fonts, shadow, type } from "../../theme";
 import { CountUp, Rise, Shimmer } from "../../components/motion";
@@ -21,6 +21,8 @@ export default function Today() {
   const [refreshing, setRefreshing] = useState(false);
   const [pending, setPending] = useState(false);
   const [walking, setWalking] = useState(false);
+  const [completing, setCompleting] = useState(false);
+  const [completeNote, setCompleteNote] = useState("");
 
   useFocusEffect(
     useCallback(() => {
@@ -72,15 +74,45 @@ export default function Today() {
   const pctOfMile = Math.round((miles - Math.floor(miles)) * 100);
 
   const n = walkNumber(walker);
+  const completed = isWalkCompleted(walker);
+
+  /*
+   * Complete My 15 Miles (founders' rule, 2026-10-14). The ONE action that
+   * charges backers' cards. Locked until the goal is reached; asks once more.
+   */
+  const onComplete = () =>
+    Alert.alert(
+      `Complete your ${goal} miles?`,
+      "This finishes your walk and charges every backer's card now. You can't undo it.",
+      [
+        { text: "Not yet", style: "cancel" },
+        {
+          text: "Complete",
+          style: "destructive",
+          onPress: async () => {
+            setCompleting(true);
+            try {
+              const r = await completeWalk();
+              setCompleteNote(r?.under_review ? "One of your walks is being reviewed. Your backers' cards are charged as soon as it's cleared." : "");
+              await reloadAll();
+            } catch (e: any) {
+              Alert.alert("Couldn't complete your walk", e?.message || "Please try again.");
+            } finally {
+              setCompleting(false);
+            }
+          },
+        },
+      ],
+    );
   const paceLine = done
-    ? "Walk complete. Thank you."
+    ? completed ? "Walk complete. Thank you." : "Press Complete My 15 Miles below."
     : `${left.toFixed(1)} miles to go · at your own pace`;
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={styles.pad} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
         <Header
-          eyebrow={activity.dormant ? "Account dormant" : done ? "Walk complete" : n > 1 ? `Your ${ordinal(n)} walk` : "Your walk"}
+          eyebrow={activity.dormant ? "Account dormant" : done && completed ? "Walk complete" : done ? "15 miles walked" : n > 1 ? `Your ${ordinal(n)} walk` : "Your walk"}
           title="Today"
           right={<Avatar name={initials(walker.name)} photo={walker.photo_url} onPress={() => router.push("/profile")} />}
         />
@@ -121,7 +153,16 @@ export default function Today() {
             Your account has been quiet for over a year. Log a walk to make it active again. Your miles and backers are all still here.
           </Notice>
         ) : null}
-        {done && !walking ? (
+        {done && !walking && !completed ? (
+          <View style={[styles.againCard, shadow.card]}>
+            <Text style={styles.againEyebrow}>{goal} miles walked</Text>
+            <Text style={styles.againTitle}>Press Complete to finish your walk.</Text>
+            <Text style={styles.againBody}>
+              This is what charges your backers’ cards. Nobody is charged until you press it.
+            </Text>
+            <Pill label={`Complete My ${goal} Miles`} icon="arrow" busy={completing} onPress={onComplete} style={{ marginTop: 16 }} />
+          </View>
+        ) : done && !walking ? (
           /*
            * Walk again (Baker, 2026-09-28). Thanks first — the walk is done —
            * then one plain invitation. Nothing starts until they confirm on
@@ -133,17 +174,28 @@ export default function Today() {
               You walked {miles.toFixed(1)} miles{hero ? ` for ${heroFullName(hero)}` : ""}.
             </Text>
             <Text style={styles.againBody}>
-              Every one of those miles is on your record. If you have another {goal} in you, walk again — for {firstName(hero?.name)} again, or for another hero.
+              {completeNote || "Your backers' cards are being charged automatically."} Every one of those miles is on your record. If you have another {goal} in you, walk again — for {firstName(hero?.name)} again, or for another hero.
             </Text>
             <Pill label="Walk again" icon="arrow" onPress={() => router.push("/walk-again")} style={{ marginTop: 16 }} />
           </View>
         ) : (
-          <Pill
-            label={walking ? "Back to your walk" : `Walk mile ${nextMile}`}
-            icon="play"
-            onPress={() => router.navigate("/walk")}
-            style={{ marginTop: 18 }}
-          />
+          <>
+            <Pill
+              label={walking ? "Back to your walk" : `Walk mile ${nextMile}`}
+              icon="play"
+              onPress={() => router.navigate("/walk")}
+              style={{ marginTop: 18 }}
+            />
+            <Pill
+              label={`Complete My ${goal} Miles`}
+              variant="secondary"
+              disabled
+              onPress={() => {}}
+              accessibilityHint={`Unlocks at ${goal} miles`}
+              style={{ marginTop: 10 }}
+            />
+            <Text style={[styles.small, { textAlign: "center", marginTop: 6 }]}>{left.toFixed(1)} mi to go. Complete unlocks at {goal} miles.</Text>
+          </>
         )}
 
         {!loaded && !hero ? (
@@ -184,7 +236,7 @@ export default function Today() {
           <Text style={styles.backersLink}>{p.count ? "See backers" : "Invite"}</Text>
         </Pressable>
 
-        <Text style={styles.disclaimer}>“Pledged” is projected from per-mile pledges and isn’t collected yet. “Raised” is money received.</Text>
+        <Text style={styles.disclaimer}>“Pledged” is what your backers’ cards will be charged when you press Complete. “Raised” is money received.</Text>
       </ScrollView>
     </SafeAreaView>
   );
