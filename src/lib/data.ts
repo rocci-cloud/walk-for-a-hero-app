@@ -38,6 +38,8 @@ export type Backer = {
   pledge_per_mile: number;
   max_pledge?: number;
   collected?: boolean;
+  /** Secret in the backer portal link (website get-backer-portal, 2026-10-14). */
+  portal_token?: string;
   collected_amount?: number;
   created_date?: string;
   /** Walk again: which of the walker's walks this pledge backs. */
@@ -216,7 +218,7 @@ export const links = {
   backWalker: (w: Walker) => `${SITE_URL}/donate?walker=${encodeURIComponent(w.slug)}`,
   giveToHero: (h: Hero) => `${SITE_URL}/donate?hero=${encodeURIComponent(h.slug)}`,
   heroPage: (h: Hero) => `${SITE_URL}/heroes/${h.slug}`,
-  backerPortal: (b: Backer) => `${SITE_URL}/portal/backer/${b.id}`,
+  backerPortal: (b: Backer) => `${SITE_URL}/portal/backer/${encodeURIComponent(b.id)}${b.portal_token ? `?t=${encodeURIComponent(b.portal_token)}` : ""}`,
 };
 
 /** portal.js inviteMessageTemplates, word for word (both updated 2026-09-28). */
