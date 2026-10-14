@@ -1,0 +1,25 @@
+# Store builds (production profile) for Google Play and the App Store.
+# Runs on Expo's servers with the Foundation's EAS credentials whenever the
+# `release` branch is pushed, or by hand: `npx eas-cli@latest workflow:run store-builds.yml`.
+# The iOS job needs the Apple distribution certificate/profile in EAS
+# credentials; if they aren't there yet that job fails and Android still builds.
+name: Store builds
+
+on:
+  push:
+    branches: ['release']
+  workflow_dispatch: {}
+
+jobs:
+  build_android:
+    name: Build Android (Play Store)
+    type: build
+    params:
+      platform: android
+      profile: production
+  build_ios:
+    name: Build iOS (App Store)
+    type: build
+    params:
+      platform: ios
+      profile: production
