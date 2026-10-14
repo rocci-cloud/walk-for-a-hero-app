@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Image, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, Linking, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
@@ -81,7 +81,7 @@ export default function HeroTab() {
         <Pill
           label={`Give to ${firstName(hero.name)}`}
           icon="arrow"
-          onPress={() => WebBrowser.openBrowserAsync(links.giveToHero(hero))}
+          onPress={() => Linking.openURL(links.giveToHero(hero))}
           style={{ marginTop: 16 }}
         />
         <Text style={styles.fine}>100% of every gift designated to a hero funds that hero’s package. Card processing fees are the one deduction, taken by the processor, not by us. Secure checkout on walkforahero.com.</Text>

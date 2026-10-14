@@ -12,7 +12,7 @@ import type { ExpoConfig } from "expo/config";
 const IS_DEV = process.env.APP_VARIANT === "development";
 
 const LOCATION_WHY =
-  "Walk For A Hero records your route while a walk is running — including with the screen locked — so every mile you walk is counted for your hero. Location is only used between Start and Finish.";
+  "Walk For A Hero records your route while a walk is running — including with the screen locked — so every mile you walk is counted for your hero. Location is only used between Start and End Walk.";
 
 const config: ExpoConfig = {
   name: IS_DEV ? "WFAH (dev)" : "Walk For A Hero",
@@ -55,12 +55,27 @@ const config: ExpoConfig = {
      * Re-check this list whenever a native dependency is added or removed.
      *
      * The app tracks no one and shares nothing with data brokers, so
-     * NSPrivacyTracking is false and the collected-data list stays empty.
+     * NSPrivacyTracking is false. Collected data (2026-10-14 audit): all
+     * linked to the account, used only for App Functionality, never tracking.
+     * Keep this in step with the App Store Connect privacy label.
      */
     privacyManifests: {
       NSPrivacyTracking: false,
       NSPrivacyTrackingDomains: [],
-      NSPrivacyCollectedDataTypes: [],
+      NSPrivacyCollectedDataTypes: [
+        "NSPrivacyCollectedDataTypeEmailAddress",
+        "NSPrivacyCollectedDataTypeName",
+        "NSPrivacyCollectedDataTypeUserID",
+        "NSPrivacyCollectedDataTypePreciseLocation",
+        "NSPrivacyCollectedDataTypeFitness",
+        "NSPrivacyCollectedDataTypePhotosorVideos",
+        "NSPrivacyCollectedDataTypeDeviceID",
+      ].map((NSPrivacyCollectedDataType) => ({
+        NSPrivacyCollectedDataType,
+        NSPrivacyCollectedDataTypeLinked: true,
+        NSPrivacyCollectedDataTypeTracking: false,
+        NSPrivacyCollectedDataTypePurposes: ["NSPrivacyCollectedDataTypePurposeAppFunctionality"],
+      })),
       NSPrivacyAccessedAPITypes: [
         {
           NSPrivacyAccessedAPIType: "NSPrivacyAccessedAPICategoryFileTimestamp",
@@ -94,13 +109,21 @@ const config: ExpoConfig = {
     permissions: [
       "ACCESS_COARSE_LOCATION",
       "ACCESS_FINE_LOCATION",
-      "ACCESS_BACKGROUND_LOCATION",
       "FOREGROUND_SERVICE",
       "FOREGROUND_SERVICE_LOCATION",
     ],
     // Route art is written to the app's own cache and handed to the share
     // menu, so no storage access is needed (and Google Play restricts it).
-    blockedPermissions: ["android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE"],
+    blockedPermissions: [
+      "android.permission.READ_EXTERNAL_STORAGE",
+      "android.permission.WRITE_EXTERNAL_STORAGE",
+      // A walk records through a foreground service the walker starts, which
+      // only needs while-in-use location. Background location would trigger
+      // Google Play's separate background-location review (2026-10-14).
+      "android.permission.ACCESS_BACKGROUND_LOCATION",
+    ],
+    // Walk routes (including home) must not go into Google cloud backups.
+    allowBackup: false,
   },
   plugins: [
     "expo-router",
@@ -133,7 +156,7 @@ const config: ExpoConfig = {
         locationAlwaysAndWhenInUsePermission: LOCATION_WHY,
         locationWhenInUsePermission: LOCATION_WHY,
         isIosBackgroundLocationEnabled: true,
-        isAndroidBackgroundLocationEnabled: true,
+        isAndroidBackgroundLocationEnabled: false,
         isAndroidForegroundServiceEnabled: true,
       },
     ],

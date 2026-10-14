@@ -1,3 +1,4 @@
+import { File } from "expo-file-system";
 import * as ImagePicker from "expo-image-picker";
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import { callFunction, functionError } from "./base44";
@@ -60,7 +61,20 @@ export async function changeWalkerPhoto(): Promise<string | null> {
   } catch {
     throw new PhotoError("We couldn't open that photo. Please choose another.");
   }
-  const fileUrl = await upload(prepared);
+  let fileUrl: string;
+  try {
+    fileUrl = await upload(prepared);
+  } finally {
+    // Drop the local copies (the picker's original still carries EXIF/GPS).
+    for (const uri of [picked, prepared]) {
+      try {
+        const f = new File(uri);
+        if (f.exists) f.delete();
+      } catch {
+        /* the OS clears the cache eventually */
+      }
+    }
+  }
   try {
     const out: any = await callFunction("set-walker-photo", { action: "set", file_url: fileUrl });
     if (out?.error) throw new PhotoError(out.error);

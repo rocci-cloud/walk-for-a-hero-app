@@ -1,11 +1,12 @@
 import * as Location from "expo-location";
-import { Linking, Platform } from "react-native";
-import { callFunction, functionError, httpStatus } from "../lib/base44";
+import { Linking } from "react-native";
+import { base44, callFunction, functionError, httpStatus } from "../lib/base44";
 import { colors } from "../theme";
 import { initialCaptureState, pauseState, resumeState } from "./capture";
 import { WALK_LOCATION_TASK } from "./locationTask";
 import {
   createWalk,
+  discardWalk,
   getPoints,
   getWalk,
   openWalk,
@@ -63,15 +64,13 @@ export async function ensureLocationPermission() {
       "settings",
     );
   }
-  const bg = await Location.requestBackgroundPermissionsAsync();
-  if (bg.status !== "granted") {
-    throw new WalkError(
-      Platform.OS === "ios"
-        ? "To keep counting with your screen locked, set Location to “Always” for Walk For A Hero in Settings."
-        : "To keep counting with your screen off, set Location to “Allow all the time” for Walk For A Hero in Settings.",
-      "settings",
-    );
-  }
+  /*
+   * No "Always" / "Allow all the time" (2026-10-14 store audit). A walk the
+   * walker starts keeps recording with the screen locked on while-in-use
+   * permission: iOS through the location background mode + blue indicator,
+   * Android through the foreground service. Demanding Always is what Apple
+   * 5.1.1 and Google Play's background-location review reject.
+   */
 }
 
 export function openSettings() {
@@ -84,7 +83,7 @@ async function startUpdates() {
   }
 }
 
-async function stopUpdates() {
+export async function stopUpdates() {
   if (await Location.hasStartedLocationUpdatesAsync(WALK_LOCATION_TASK).catch(() => false)) {
     await Location.stopLocationUpdatesAsync(WALK_LOCATION_TASK).catch(() => {});
   }
@@ -99,6 +98,7 @@ export async function startWalk(ownerEmail: string): Promise<WalkRow> {
   try {
     await startUpdates();
   } catch {
+    discardWalk(walk.id); // don't leave a "Recording" walk with no GPS behind
     throw new WalkError("Your phone wouldn't start GPS. Close other navigation apps and try again.");
   }
   return walk;
@@ -154,6 +154,17 @@ export async function sendWalk(id: string): Promise<SendOutcome> {
 
   const path = getPoints(id);
   if (path.length < 2) return { kind: "nothing_recorded" };
+
+  // A walk is credited to whoever is signed in, so never send one person's
+  // walk under another account on a shared phone (2026-10-14 audit).
+  if (w.owner_email) {
+    const me: any = await base44.auth.me().catch(() => null);
+    if (me?.email && me.email.trim().toLowerCase() !== w.owner_email.trim().toLowerCase()) {
+      const message = `This walk was recorded by ${w.owner_email}. Sign in as that account to send it, or delete it.`;
+      setSendError(id, message);
+      return { kind: "rejected", message };
+    }
+  }
 
   try {
     const res: any = await callFunction("log-walk-miles", {

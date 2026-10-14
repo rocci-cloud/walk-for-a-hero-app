@@ -12,12 +12,13 @@ import { HeroPhoto } from "../../components/HeroPhoto";
 import { MISSION_MILES, SITE_URL } from "../../lib/config";
 import { completeWalk, firstName, heroFullName, heroSubtitle, initials, isWalkCompleted, pledgeSummary, money, ordinal, walkerActivity, walkNumber } from "../../lib/data";
 import { openWalk } from "../../walk/store";
+import { base44 } from "../../lib/base44";
 import { colors, fonts, shadow, type } from "../../theme";
 import { CountUp, Rise, Shimmer } from "../../components/motion";
 
 export default function Today() {
   const { state } = useAuth();
-  const { walker, hero, backers, loaded, reloadAll } = useWalkerData();
+  const { walker, hero, backers, gifts, loaded, reloadAll } = useWalkerData();
   const [refreshing, setRefreshing] = useState(false);
   const [pending, setPending] = useState(false);
   const [walking, setWalking] = useState(false);
@@ -67,7 +68,7 @@ export default function Today() {
   const miles = walker.miles_walked || 0;
   const goal = walker.goal_miles || MISSION_MILES;
   const activity = walkerActivity(walker);
-  const p = pledgeSummary(backers, miles);
+  const p = pledgeSummary(backers, miles, gifts);
   const done = miles >= goal;
   const left = Math.max(0, goal - miles);
   const nextMile = Math.min(goal, Math.floor(miles) + 1);
@@ -92,6 +93,11 @@ export default function Today() {
           onPress: async () => {
             setCompleting(true);
             try {
+              // No walk open on this phone: clear a "walking now" flag a failed
+              // offline write may have left behind, or the server refuses.
+              if (!openWalk() && walker.is_walking) {
+                await base44.entities.Walker.update(walker.id, { is_walking: false, live_miles: 0 }).catch(() => {});
+              }
               const r = await completeWalk();
               setCompleteNote(r?.under_review ? "One of your walks is being reviewed. Your backers' cards are charged as soon as it's cleared." : "");
               await reloadAll();
@@ -127,7 +133,7 @@ export default function Today() {
             <View style={{ flex: 1, gap: 10 }}>
               <View>
                 <Text style={styles.statLabel}>Pledged</Text>
-                <CountUp value={p.pledgedToCollect} format={(n) => money(n)} style={styles.statBig} />
+                <CountUp value={p.chargeAtCompletion} format={(n) => money(n)} style={styles.statBig} />
               </View>
               <View style={styles.rule} />
               <View>
@@ -160,7 +166,11 @@ export default function Today() {
             <Text style={styles.againBody}>
               This is what charges your backers’ cards. Nobody is charged until you press it.
             </Text>
-            <Pill label={`Complete My ${goal} Miles`} icon="arrow" busy={completing} onPress={onComplete} style={{ marginTop: 16 }} />
+            {pending ? (
+              <Text style={[styles.againBody, { marginTop: 12 }]}>Send your waiting walk on the Walk tab first, then press Complete.</Text>
+            ) : (
+              <Pill label={`Complete My ${goal} Miles`} icon="arrow" busy={completing} onPress={onComplete} style={{ marginTop: 16 }} />
+            )}
           </View>
         ) : done && !walking ? (
           /*

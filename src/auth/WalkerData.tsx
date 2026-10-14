@@ -1,11 +1,13 @@
 import { createContext, useContext, type ReactNode } from "react";
 import { useAuth, type Walker } from "./AuthContext";
-import { useWalkerExtras, type Backer, type Hero } from "../lib/data";
+import { useWalkerExtras, type Backer, type Gift, type Hero } from "../lib/data";
 
 type Ctx = {
   walker: Walker | null;
   hero: Hero | null;
   backers: Backer[];
+  /** Set-amount card pledges and direct gifts (Donation rows). */
+  gifts: Gift[];
   loaded: boolean;
   /** Re-read the walker record, hero and backers. */
   reloadAll: () => Promise<void>;
@@ -17,12 +19,12 @@ const WalkerDataCtx = createContext<Ctx | null>(null);
 export function WalkerDataProvider({ children }: { children: ReactNode }) {
   const { state, refresh } = useAuth();
   const walker = state.status === "signed_in" ? state.walker : null;
-  const { hero, backers, loaded, reload } = useWalkerExtras(walker);
+  const { hero, backers, gifts, loaded, reload } = useWalkerExtras(walker);
   const reloadAll = async () => {
     await refresh().catch(() => {});
     await reload().catch(() => {});
   };
-  return <WalkerDataCtx.Provider value={{ walker, hero, backers, loaded, reloadAll }}>{children}</WalkerDataCtx.Provider>;
+  return <WalkerDataCtx.Provider value={{ walker, hero, backers, gifts, loaded, reloadAll }}>{children}</WalkerDataCtx.Provider>;
 }
 
 export function useWalkerData() {
