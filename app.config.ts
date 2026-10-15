@@ -163,12 +163,16 @@ const config: ExpoConfig = {
          */
         locationAlwaysPermission: LOCATION_WHY,
         /*
-         * The app never calls Location.watchMotionActivityAsync — the only
-         * path that reaches CoreMotion — so it asks for no motion access.
-         * Unset, expo-location would add a placeholder motion string and the
-         * app would be requesting a permission it does not use.
+         * The app never calls Location.watchMotionActivityAsync, the only path
+         * that reaches CoreMotion, so the phone never shows this to a walker.
+         * It still has to be present: expo-location compiles CoreMotion code
+         * into the app, and App Store Connect scans the binary, not our code.
+         * Removing the key (motionUsagePermission: false) got build 1.0.0 (4)
+         * rejected with error 90683 on 2026-10-15. So the string stays, and it
+         * says plainly that motion is not used.
          */
-        motionUsagePermission: false,
+        motionUsagePermission:
+          "Walk For A Hero does not use your motion activity. Your miles are measured by GPS only.",
         isIosBackgroundLocationEnabled: true,
         isAndroidBackgroundLocationEnabled: false,
         isAndroidForegroundServiceEnabled: true,
