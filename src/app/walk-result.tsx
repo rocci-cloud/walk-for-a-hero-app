@@ -7,6 +7,7 @@ import { useWalkerData } from "../auth/WalkerData";
 import { Pill } from "../components/Pill";
 import { formatElapsed, formatPace } from "../lib/geo";
 import { MISSION_MILES } from "../lib/config";
+import { milestoneCrossed } from "../lib/milestones";
 import {
   backerCurrentCharge,
   firstName,
@@ -58,6 +59,13 @@ export default function WalkResult() {
   const secs = Math.round(walk.active_ms / 1000);
   const pace = formatPace(r.distance, secs);
   const left = Math.max(0, goal - after);
+  /*
+   * 5 and 10 miles (2026-10-15). The route art is the best thing a walker
+   * can share and it only appeared at 15, by which point every backer they
+   * were going to recruit already had been. These are the two points where
+   * there is something real to show AND miles left to be backed on.
+   */
+  const milestone = milestoneCrossed(before, after, goal);
   const heroFirst = firstName(hero?.name);
   const openBackers = followingThisWalk(backers).length;
 
@@ -138,6 +146,25 @@ export default function WalkResult() {
           </Text>
         </View>
 
+        {milestone && left > 0 ? (
+          <View style={styles.milestone}>
+            <Text style={styles.label}>Milestone</Text>
+            <Text style={styles.milestoneTitle}>
+              {milestone} of {goal} miles{heroFirst ? ` for ${heroFirst}` : ""}.
+            </Text>
+            <Text style={styles.milestoneBody}>
+              Your route from this walk makes a card you can post — the easiest way to pick up one more backer
+              before you finish.
+            </Text>
+            <Pill
+              label="Share your route art"
+              icon="arrow"
+              onPress={() => router.push({ pathname: "/route-art", params: { id: walk.id } })}
+              style={{ marginTop: 16 }}
+            />
+          </View>
+        ) : null}
+
         {left <= 0 && walker ? (
           <>
             {/* 15 miles reached: Complete (on Today) charges the backers; Walk again only after that. */}
@@ -149,7 +176,13 @@ export default function WalkResult() {
             <Pill label="See the replay" variant="light" onPress={() => router.replace({ pathname: "/replay", params: { id: walk.id } })} style={{ marginTop: 10 }} />
           </>
         ) : (
-          <Pill label="See the replay" icon="play" onPress={() => router.replace({ pathname: "/replay", params: { id: walk.id } })} style={{ marginTop: 22 }} />
+          <Pill
+            label="See the replay"
+            icon="play"
+            variant={milestone ? "light" : undefined}
+            onPress={() => router.replace({ pathname: "/replay", params: { id: walk.id } })}
+            style={{ marginTop: milestone ? 10 : 22 }}
+          />
         )}
         <View style={styles.quietRow}>
           <Pressable onPress={() => { tap.light(); shareUpdate(); }} hitSlop={8}>
@@ -242,6 +275,9 @@ const styles = StyleSheet.create({
   statValue: { fontFamily: fonts.heavy, fontSize: 17, color: colors.paper, marginTop: 3, fontVariant: ["tabular-nums"] },
   note: { fontFamily: fonts.body, fontSize: 11.5, lineHeight: 16, color: "rgba(244,238,227,0.55)", marginTop: 10 },
   quote: { marginTop: 22, borderLeftWidth: 2, borderLeftColor: colors.brass, paddingLeft: 14 },
+  milestone: { marginTop: 22, borderRadius: 24, padding: 18, backgroundColor: "rgba(255,255,255,0.06)", borderWidth: 1, borderColor: "rgba(200,32,42,0.45)" },
+  milestoneTitle: { fontFamily: fonts.black, fontSize: 20, color: colors.paper, marginTop: 4 },
+  milestoneBody: { fontFamily: fonts.body, fontSize: 13.5, lineHeight: 20, color: "rgba(244,238,227,0.78)", marginTop: 8 },
   quoteText: { fontFamily: fonts.storyItalic, fontSize: 21, lineHeight: 28, color: colors.paper },
   quietRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 18, paddingHorizontal: 6 },
   quiet: { ...type.labelSm, color: "rgba(244,238,227,0.8)", textDecorationLine: "underline", paddingVertical: 10 },

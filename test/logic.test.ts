@@ -5,6 +5,7 @@ import { initialCaptureState, processFix, pauseState, resumeState, type CaptureS
 import { analyzeOnFoot } from "../src/lib/geo";
 import { base64UrlFromBytes, base64ToBase64Url, parseAuthCallback, CODE_RE } from "../src/lib/pkce";
 import { firstName, formalName, initials } from "../src/lib/names";
+import { milestoneCrossed, MILESTONES } from "../src/lib/milestones";
 import {
   backerCurrentCharge,
   isSettled,
@@ -283,4 +284,39 @@ test("final_miles of 0 still counts as settled", () => {
   // A walk that credited nothing is settled at zero, not unsettled.
   assert.equal(isSettled({ final_miles: 0 }), true);
   assert.equal(pledgeMiles({ final_miles: 0 }, 15), 0);
+});
+
+
+/* ── Milestones ───────────────────────────────────────────────────────── */
+
+test("a walk that crosses 5 miles marks it", () => {
+  assert.equal(milestoneCrossed(3.2, 5.6), 5);
+  assert.equal(milestoneCrossed(4.99, 5), 5);
+});
+
+test("a milestone is only marked on the walk that crosses it", () => {
+  assert.equal(milestoneCrossed(5.1, 7.0), null);   // already past 5
+  assert.equal(milestoneCrossed(0, 4.9), null);     // not there yet
+});
+
+test("a walk crossing both 5 and 10 marks the higher one", () => {
+  assert.equal(milestoneCrossed(2, 11), 10);
+});
+
+test("a milestone at or past the goal is skipped", () => {
+  // Goal of 10: the 10th mile is the finish, which has its own moment.
+  assert.equal(milestoneCrossed(9, 10, 10), null);
+  assert.equal(milestoneCrossed(4, 6, 10), 5);
+  // A goal below every milestone never marks one.
+  assert.equal(milestoneCrossed(0, 4, 4), null);
+});
+
+test("a walk that goes nowhere marks nothing", () => {
+  assert.equal(milestoneCrossed(5, 5), null);
+  assert.equal(milestoneCrossed(7, 6), null);       // never go backwards
+  assert.equal(milestoneCrossed(NaN as any, 6), 5); // junk before = treated as 0
+});
+
+test("the milestones are the ones the copy promises", () => {
+  assert.deepEqual([...MILESTONES], [5, 10]);
 });
