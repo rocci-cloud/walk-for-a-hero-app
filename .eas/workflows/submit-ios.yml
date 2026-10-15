@@ -1,0 +1,20 @@
+# Uploads one finished iPhone build to App Store Connect (it then shows up in
+# TestFlight and can be attached to the 1.0 version). Manual only: run it from
+# expo.dev > Workflows. It does NOT send the app to Apple for review — that is
+# a separate button in App Store Connect.
+#
+# Uses the App Store Connect API key stored in Expo and the identifiers under
+# submit.production.ios in eas.json. To submit a different build, change
+# build_id to that build's ID (the long id at the end of its expo.dev URL).
+name: Submit iOS to App Store Connect
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  submit_ios:
+    name: Submit iOS build 1.0.0 (4)
+    type: submit
+    params:
+      build_id: ca853362-2e96-4198-85a6-581d4b45f651
+      profile: production
