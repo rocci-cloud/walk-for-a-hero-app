@@ -13,10 +13,10 @@ on:
 
 jobs:
   submit_ios:
-    name: Submit iOS build 1.0.0 (4)
+    name: Submit iOS build 1.0.0 (5)
     type: submit
     env:
       EXPO_DEBUG: "1"
     params:
-      build_id: ca853362-2e96-4198-85a6-581d4b45f651
+      build_id: b50e1ea5-90e9-4020-8699-079c95cb13d3
       profile: production
