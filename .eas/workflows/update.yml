@@ -4,10 +4,13 @@
 #
 # One job per phone platform: platform "all" also exports a WEB bundle, which
 # this app doesn't have (no react-native-web) — that failed the first run.
-# Android only for now: there is no iPhone build yet, and on Expo's free tier
-# every job waits in one queue — the unused iPhone job doubled the wait and
-# held up a real build on 2026-09-28. Add an update_ios job back (same shape,
-# platform: ios) with the first iPhone build.
+# Android only, on purpose. These updates go to the "preview" channel, which
+# only internal test builds listen on. The iPhone build (1.0.0 (4), made
+# 2026-10-15) is a store/TestFlight build on the "production" channel, and an
+# iPhone preview build would need each tester's phone registered with Apple,
+# so nothing would receive an update_ios job. On Expo's free tier every job
+# waits in one queue — the unused iPhone job doubled the wait and held up a
+# real build on 2026-09-28. Add one only if an iPhone preview build exists.
 # (Kept out of app.config.ts on purpose: changing the app config changes the
 # build fingerprint, and updates would then skip already-installed builds.)
 name: Update preview builds
