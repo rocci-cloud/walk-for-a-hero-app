@@ -24,6 +24,14 @@ export default function SignIn() {
   const [busy, setBusy] = useState<null | "email" | "google" | "apple">(null);
   const [error, setError] = useState("");
   const [detail, setDetail] = useState("");
+  /*
+   * The internal fault behind a failed sign-in stays hidden until the walker
+   * taps the message (audit, 2026-10-05). It is what we need to diagnose a
+   * report, and it is alarming to read — a real one was
+   * "n.default.setValueWithKeyAsync is not a function" sitting under
+   * "Sign-in didn't complete."
+   */
+  const [showDetail, setShowDetail] = useState(false);
 
   /*
    * Typing clears a standing error. Without this, "Enter your email and
@@ -57,6 +65,7 @@ export default function SignIn() {
     } catch (e: any) {
       setError(e instanceof SignInError ? e.message : "Something went wrong. Please try again.");
       setDetail(e instanceof SignInError ? e.detail : String(e?.message || e));
+      setShowDetail(false);
     } finally {
       setBusy(null);
     }
@@ -100,11 +109,18 @@ export default function SignIn() {
               onSubmitEditing={() => run("email")}
             />
             {error ? (
-              <Text accessibilityRole="alert" style={styles.error}>
-                {error}
-              </Text>
+              <Pressable
+                onPress={() => detail && setShowDetail((v) => !v)}
+                accessibilityRole={detail ? "button" : undefined}
+                accessibilityHint={detail ? "Shows the technical details of this error" : undefined}
+              >
+                <Text accessibilityRole="alert" style={styles.error}>
+                  {error}
+                  {detail && !showDetail ? <Text style={styles.detailHint}>  Tap for details</Text> : null}
+                </Text>
+              </Pressable>
             ) : null}
-            {detail ? <Text style={styles.detail}>{detail}</Text> : null}
+            {detail && showDetail ? <Text style={styles.detail}>{detail}</Text> : null}
             <Pill label="Sign in" icon="arrow" busy={busy === "email"} disabled={!!busy} onPress={() => run("email")} style={{ marginTop: 18 }} />
             <Pressable onPress={() => WebBrowser.openBrowserAsync(`${SITE_URL}/forgot-password`)} style={styles.linkRow}>
               <Text style={styles.link}>Forgot password?</Text>
@@ -144,5 +160,6 @@ const styles = StyleSheet.create({
   linkRow: { paddingVertical: 12, alignItems: "center" },
   link: { fontFamily: fonts.semibold, fontSize: 14, color: colors.blue, textDecorationLine: "underline" },
   detail: { fontFamily: fonts.body, color: colors.muted, marginTop: 6, fontSize: 11, lineHeight: 15 },
+  detailHint: { fontFamily: fonts.body, color: colors.muted, fontSize: 12 },
   or: { ...type.bodySm, textAlign: "center", color: colors.muted, marginVertical: 14 },
 });
