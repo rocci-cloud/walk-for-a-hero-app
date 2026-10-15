@@ -155,6 +155,20 @@ const config: ExpoConfig = {
       {
         locationAlwaysAndWhenInUsePermission: LOCATION_WHY,
         locationWhenInUsePermission: LOCATION_WHY,
+        /*
+         * The legacy iOS 10 key. Left unset, expo-location fills it with its
+         * own placeholder ("Allow $(PRODUCT_NAME) to access your location"),
+         * and a purpose string that does not say what the location is for is
+         * a standing App Review rejection under Guideline 5.1.1.
+         */
+        locationAlwaysPermission: LOCATION_WHY,
+        /*
+         * The app never calls Location.watchMotionActivityAsync — the only
+         * path that reaches CoreMotion — so it asks for no motion access.
+         * Unset, expo-location would add a placeholder motion string and the
+         * app would be requesting a permission it does not use.
+         */
+        motionUsagePermission: false,
         isIosBackgroundLocationEnabled: true,
         isAndroidBackgroundLocationEnabled: false,
         isAndroidForegroundServiceEnabled: true,
