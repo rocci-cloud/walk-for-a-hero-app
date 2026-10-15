@@ -1,11 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { base44, callFunction, functionError } from "./base44";
-import { DORMANT_AFTER_DAYS, MISSION_MILES, SITE_URL } from "./config";
+import { DORMANT_AFTER_DAYS, SITE_URL } from "./config";
 import type { Walker } from "../auth/AuthContext";
 
-/* Pure name formatting lives in names.ts so the node tests can import it
-   without pulling in the Base44 client and the React Native runtime. */
+/* Pure helpers live outside this file so the node tests can import them
+   without pulling in the Base44 client and the React Native runtime:
+   names.ts for name formatting, pledges.ts for the money math. */
 import { formalName } from "./names";
+import { backerCurrentCharge, isSettled, MAX_PLEDGE_PER_MILE, MISSION_MILES, pledgeMiles } from "./pledges";
+export {
+  backerCurrentCharge,
+  isSettled,
+  MAX_COLLECTED_PER_BACKER,
+  MAX_PLEDGE_PER_MILE,
+  pledgeMiles,
+} from "./pledges";
 export { firstName, formalName, initials } from "./names";
 
 /**
@@ -88,30 +97,6 @@ export function walkerActivity(walker?: { created_date?: string; walk_history?: 
 
 /* ── Pledges (portal.js backerCurrentCharge) ────────────────────────── */
 
-export const MAX_PLEDGE_PER_MILE = 100;
-export const MAX_COLLECTED_PER_BACKER = 2000;
-
-export function backerCurrentCharge(b: Pick<Backer, "pledge_per_mile" | "max_pledge">, walkerMiles: number) {
-  const perMile = Math.min(Number(b?.pledge_per_mile) || 0, MAX_PLEDGE_PER_MILE);
-  const maxPledge = Number(b?.max_pledge) || 0;
-  const optedInMiles = perMile > 0 ? Math.max(MISSION_MILES, maxPledge / perMile) : MISSION_MILES;
-  const billable = Math.min(Math.max(0, Number(walkerMiles) || 0), optedInMiles);
-  const raw = perMile * billable;
-  const capped = maxPledge > 0 ? Math.min(raw, maxPledge) : raw;
-  return Math.min(capped, MAX_COLLECTED_PER_BACKER);
-}
-
-/* ── Walk again (website portal.js, 2026-09-28) ────────────────────── */
-
-/** A pledge whose walk is finished: settled at that walk's final_miles. */
-export function isSettled(b: Pick<Backer, "final_miles">) {
-  return b?.final_miles !== undefined && b?.final_miles !== null && Number.isFinite(Number(b.final_miles));
-}
-
-/** The miles a pledge is charged against: its own walk's, not the new walk's. */
-export function pledgeMiles(b: Pick<Backer, "final_miles">, walkerMiles: number) {
-  return isSettled(b) ? Number(b.final_miles) : Number(walkerMiles) || 0;
-}
 
 /** Pledges that move with the CURRENT walk's miles. */
 export function followingThisWalk(backers: Backer[]) {
@@ -185,15 +170,33 @@ export function pledgeSummary(backers: Backer[], miles: number, gifts: Gift[] = 
   const open = backers.filter((b) => !b.collected);
   const following = open.filter((b) => !isSettled(b));
   const pledgedGifts = gifts.filter((g) => g.pledged);
+  /*
+   * Each per-mile pledge at the figure its card was authorised for: the full
+   * 15 miles for this walk, or the miles actually walked for a settled one.
+   * Computed ONCE because two of the figures below are the same money and
+   * were duplicated expressions until 2026-10-15 — edit one, and the other
+   * silently disagrees with it on screen.
+   */
+  /*
+   * NOTE (2026-10-15 audit): this charges at MISSION_MILES, not at the
+   * walker's own goal_miles. Six screens display "x of {goal_miles || 15}",
+   * so a walker whose goal was ever something other than 15 would be shown a
+   * goal and a charge figure that disagree. Every goal_miles is pinned to 15
+   * today (data cleanup, 2026-09-28), so this is latent, not live. Left as
+   * is deliberately: changing it changes what real cards are charged, which
+   * is the founders' call, not a refactor.
+   */
+  const perMileAtFinish = open.reduce(
+    (s, b) => s + backerCurrentCharge(b, isSettled(b) ? Number(b.final_miles) : MISSION_MILES),
+    0,
+  );
+  const giftTotal = pledgedGifts.reduce((s, g) => s + (Number(g.amount) || 0), 0);
   return {
     /**
      * What the backers' cards will actually be charged when the walker
-     * presses Complete: each per-mile pledge at its full 15-mile figure
-     * (what create-checkout-session saved), plus set-amount pledges.
+     * presses Complete: the per-mile pledges plus the set-amount pledges.
      */
-    chargeAtCompletion:
-      open.reduce((s, b) => s + backerCurrentCharge(b, isSettled(b) ? Number(b.final_miles) : MISSION_MILES), 0) +
-      pledgedGifts.reduce((s, g) => s + (Number(g.amount) || 0), 0),
+    chargeAtCompletion: perMileAtFinish + giftTotal,
     /** Set-amount card pledges waiting for Complete. */
     giftPledges: pledgedGifts.length,
     /** Backers following the current walk. */
@@ -203,8 +206,8 @@ export function pledgeSummary(backers: Backer[], miles: number, gifts: Gift[] = 
     perMile: following.reduce((s, b) => s + Math.min(Number(b.pledge_per_mile) || 0, MAX_PLEDGE_PER_MILE), 0),
     /** Projected, not yet collected — the website labels it the same way. */
     pledgedToCollect: open.reduce((s, b) => s + backerCurrentCharge(b, pledgeMiles(b, miles)), 0),
-    /** If the walker finishes all 15 miles of this walk. */
-    pledgedAtFinish: open.reduce((s, b) => s + backerCurrentCharge(b, isSettled(b) ? Number(b.final_miles) : MISSION_MILES), 0),
+    /** If the walker finishes all 15 miles of this walk. Cards only. */
+    pledgedAtFinish: perMileAtFinish,
     collected: backers.reduce((s, b) => s + (b.collected ? Number(b.collected_amount) || 0 : 0), 0),
   };
 }

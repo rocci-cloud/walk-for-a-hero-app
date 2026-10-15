@@ -5,6 +5,14 @@ import { initialCaptureState, processFix, pauseState, resumeState, type CaptureS
 import { analyzeOnFoot } from "../src/lib/geo";
 import { base64UrlFromBytes, base64ToBase64Url, parseAuthCallback, CODE_RE } from "../src/lib/pkce";
 import { firstName, formalName, initials } from "../src/lib/names";
+import {
+  backerCurrentCharge,
+  isSettled,
+  pledgeMiles,
+  MAX_COLLECTED_PER_BACKER,
+  MAX_PLEDGE_PER_MILE,
+  MISSION_MILES,
+} from "../src/lib/pledges";
 
 // ---------- helpers ----------
 const M_PER_DEG_LAT = 111_320;
@@ -223,4 +231,56 @@ test("formalName is empty when there is no name", () => {
 
 test("firstName still skips the rank if one is left in the name", () => {
   assert.equal(firstName("SSgt. Robert Ng"), "Robert");
+});
+
+
+/* ── Pledge money ──────────────────────────────────────────────────────
+   These are the dollars a walker is told their backers' cards will be
+   charged. They had no tests until 2026-10-15. */
+
+test("a plain pledge charges per mile walked", () => {
+  assert.equal(backerCurrentCharge({ pledge_per_mile: 5 }, 10), 50);
+  assert.equal(backerCurrentCharge({ pledge_per_mile: 2.5 }, 15), 37.5);
+});
+
+test("miles beyond the mission are not charged without a cap", () => {
+  // 20 miles walked, no cap: the backer agreed to 15 miles, not 20.
+  assert.equal(backerCurrentCharge({ pledge_per_mile: 5 }, 20), 75);
+});
+
+test("a cap lets a backer opt in past 15 miles, and still stops them", () => {
+  // $5/mi capped at $100 = 20 miles of exposure, so 18 miles charges $90.
+  assert.equal(backerCurrentCharge({ pledge_per_mile: 5, max_pledge: 100 }, 18), 90);
+  // ...and never more than the cap itself.
+  assert.equal(backerCurrentCharge({ pledge_per_mile: 5, max_pledge: 100 }, 25), 100);
+});
+
+test("the per-mile and per-backer ceilings both hold", () => {
+  // Per-mile rate is clamped, so an absurd rate cannot charge an absurd sum.
+  assert.equal(
+    backerCurrentCharge({ pledge_per_mile: 10_000 }, MISSION_MILES),
+    Math.min(MAX_PLEDGE_PER_MILE * MISSION_MILES, MAX_COLLECTED_PER_BACKER),
+  );
+  assert.ok(backerCurrentCharge({ pledge_per_mile: 100, max_pledge: 99_999 }, 999) <= MAX_COLLECTED_PER_BACKER);
+});
+
+test("nothing is charged for zero, missing or negative miles", () => {
+  assert.equal(backerCurrentCharge({ pledge_per_mile: 5 }, 0), 0);
+  assert.equal(backerCurrentCharge({ pledge_per_mile: 5 }, -3), 0);
+  assert.equal(backerCurrentCharge({}, 10), 0);
+});
+
+test("a settled pledge is fixed at the miles of its own walk", () => {
+  const settled = { final_miles: 9.2 };
+  assert.equal(isSettled(settled), true);
+  assert.equal(pledgeMiles(settled, 15), 9.2); // the walker's new miles do not raise it
+  assert.equal(isSettled({ final_miles: null }), false);
+  assert.equal(isSettled({}), false);
+  assert.equal(pledgeMiles({}, 6.4), 6.4);
+});
+
+test("final_miles of 0 still counts as settled", () => {
+  // A walk that credited nothing is settled at zero, not unsettled.
+  assert.equal(isSettled({ final_miles: 0 }), true);
+  assert.equal(pledgeMiles({ final_miles: 0 }, 15), 0);
 });

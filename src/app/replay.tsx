@@ -33,6 +33,22 @@ export default function Replay() {
   const fastest = splits.length ? Math.min(...splits.map((s) => s.seconds / s.fraction)) : 1;
   const dayName = walk ? new Date(walk.started_at).toLocaleDateString("en-US", { weekday: "long" }) : "";
 
+  /*
+   * A walk that is not on this phone — an old id from walk history, or a
+   * reinstall — left the header rendering "\u2019s 0.00 miles": a possessive
+   * with nothing in front of it, over an empty map (found 2026-10-15 while
+   * rendering store screenshots). walk-result.tsx already guards the same
+   * case; this matches it rather than inventing a second treatment.
+   */
+  if (!walk) {
+    return (
+      <View style={[styles.root, { paddingTop: insets.top + 24, paddingHorizontal: 20 }]}>
+        <Text style={styles.title}>Walk not found</Text>
+        <Pill label="Done" variant="light" onPress={() => router.back()} style={{ marginTop: 20 }} />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.root}>
       <View style={styles.mapWrap}>

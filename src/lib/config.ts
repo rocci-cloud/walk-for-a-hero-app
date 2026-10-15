@@ -20,7 +20,9 @@ export const APP_AUTH_CALLBACK = "walkforahero://auth";
  */
 export const APPLE_SIGNIN_ENABLED = Platform.OS === "ios";
 
-/** The mission, as the website defines it (src/lib/portal.js on the site). */
-export const MISSION_MILES = 15;
+/* The mission figure lives in pledges.ts with the money math that uses it,
+   so the node tests can load it without react-native. Re-exported here
+   because this is where the rest of the app expects to find it. */
+export { MISSION_MILES } from "./pledges";
 /** No walk deadline; an account only goes dormant after a year with no walks. */
 export const DORMANT_AFTER_DAYS = 365;
