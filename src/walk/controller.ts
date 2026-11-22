@@ -5,6 +5,10 @@ import { colors } from "../theme";
 import { initialCaptureState, pauseState, resumeState } from "./capture";
 import { WALK_LOCATION_TASK } from "./locationTask";
 import {
+  startBackgroundActivity,
+  stopBackgroundActivity,
+} from "../../modules/wfah-background-activity";
+import {
   createWalk,
   discardWalk,
   getPoints,
@@ -78,6 +82,14 @@ export function openSettings() {
 }
 
 async function startUpdates() {
+  /*
+   * iOS background-activity session FIRST (2026-11-22). Without it iOS 17+
+   * suspends a While-Using app's background location every few minutes —
+   * Glenn Baker's walks recorded ~1 min, then lost 4-5 min, over and over.
+   * Always (re)acquired, including on reattach after a relaunch, because the
+   * session does not survive the process. No-op off iOS.
+   */
+  await startBackgroundActivity();
   if (!(await Location.hasStartedLocationUpdatesAsync(WALK_LOCATION_TASK).catch(() => false))) {
     await Location.startLocationUpdatesAsync(WALK_LOCATION_TASK, TASK_OPTIONS);
   }
@@ -87,6 +99,7 @@ export async function stopUpdates() {
   if (await Location.hasStartedLocationUpdatesAsync(WALK_LOCATION_TASK).catch(() => false)) {
     await Location.stopLocationUpdatesAsync(WALK_LOCATION_TASK).catch(() => {});
   }
+  await stopBackgroundActivity();
 }
 
 export async function startWalk(ownerEmail: string): Promise<WalkRow> {
@@ -98,6 +111,7 @@ export async function startWalk(ownerEmail: string): Promise<WalkRow> {
   try {
     await startUpdates();
   } catch {
+    await stopBackgroundActivity();
     discardWalk(walk.id); // don't leave a "Recording" walk with no GPS behind
     throw new WalkError("Your phone wouldn't start GPS. Close other navigation apps and try again.");
   }

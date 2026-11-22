@@ -7,7 +7,7 @@ what makes "miles on the phone" = "miles on the website" = "miles credited".
 
 | Copied | SHA-256 |
 |---|---|
-| 2026-09-27 | `128a95d2649449e9fa4a01c7fd10d235b70bd0850cda746b361b4c2cc4210847` |
+| 2026-11-22 | `8693ee1867f5dcf38992940d0b79cf00b6e5f898485e125edf7b8b8aaf610319` (gap bridging) |
 
 Never edit `geo.js` here. When the website's copy changes, copy it again,
 update the checksum above, and update `geo.d.ts` if an export changed.

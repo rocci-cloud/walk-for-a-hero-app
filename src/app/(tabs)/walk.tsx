@@ -273,7 +273,7 @@ export default function WalkScreen() {
 
             {walk && walk.capture.gapCount > 0 && status !== "finishing" ? (
               <Text style={styles.note}>
-                Signal dropped {walk.capture.gapCount} time{walk.capture.gapCount === 1 ? "" : "s"}. Miles only count where your phone could see you.
+                GPS lock lost {walk.capture.gapCount} time{walk.capture.gapCount === 1 ? "" : "s"} (this is GPS, not your cell bars). Distance across short gaps still counts in a straight line, so keep walking.
               </Text>
             ) : null}
             {problem && <Problem problem={problem} />}

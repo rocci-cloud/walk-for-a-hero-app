@@ -293,6 +293,67 @@ export function gapIsCorroborated(prev, cur) {
   return (tc - tp) / 1000 >= GPS_GAP_THRESHOLD_SECONDS;
 }
 
+/*
+ * ─────────────────────────────────────────────────────────────────────────
+ *  GAP BRIDGING — 2026-11-22
+ *
+ *  Until today a corroborated signal-loss gap was "never bridged": the route
+ *  re-originated at the first fix after the gap and the distance walked
+ *  during it was thrown away. On iPhone that destroyed most of a walk. iOS
+ *  suspends background location for a While-Using app every few minutes
+ *  (production walks 6b02fd8c / 6b021e72, Glenn Baker: ~1 min of 2 m-accurate
+ *  fixes, then 4-5 min of silence, repeated). Apple Watch 3.07 mi; credited
+ *  1.21 mi.
+ *
+ *  Bridging credits the STRAIGHT-LINE distance between the last fix before a
+ *  gap and the first fix after it — never more than the walker provably
+ *  covered — when that leg is on-foot slow and the gap is short enough that
+ *  a straight line still means something. The bridge is judged MORE strictly
+ *  than an ordinary leg (a path with no `gap` marker already has every leg
+ *  credited up to MAX_ON_FOOT_MPH), so a forged marker buys nothing new.
+ *  A bridge that fails either test credits nothing and rejects nothing —
+ *  exactly the old behaviour — and the gap-time review flag still fires.
+ *
+ *  Only SIGNAL-LOSS gaps bridge. A gap the walker made on purpose (Pause →
+ *  Resume, or reopening an interrupted walk) carries `resume: true` and is
+ *  never bridged: what happens while paused is not supposed to count. The
+ *  marker only ever withholds credit, so trusting it from the client is safe.
+ * ─────────────────────────────────────────────────────────────────────────
+ */
+
+/** Straight-line pace above which a gap is not bridged (the indoor-mode cap). */
+export const MAX_BRIDGE_MPH = 8;
+/** Gaps longer than this are not bridged: past 15 min a straight line is a guess. */
+export const MAX_BRIDGE_SECONDS = 900;
+
+/**
+ * Miles to credit across a corroborated gap from anchor `a` to the first
+ * post-gap fix `cur`. 0 when the leg is unmeasurable, noise, too long in
+ * time, or faster than MAX_BRIDGE_MPH.
+ */
+export function gapBridgeMiles(a, cur) {
+  if (cur?.resume) return 0; // a deliberate pause is not walking
+  if (typeof a?.lat !== "number" || typeof a?.lng !== "number") return 0;
+  if (typeof cur?.lat !== "number" || typeof cur?.lng !== "number") return 0;
+  const ta = a?.t ? new Date(a.t).getTime() : NaN;
+  const tc = cur?.t ? new Date(cur.t).getTime() : NaN;
+  if (!Number.isFinite(ta) || !Number.isFinite(tc)) return 0;
+  const dtSeconds = (tc - ta) / 1000;
+  if (!(dtSeconds > 0) || dtSeconds > MAX_BRIDGE_SECONDS) return 0;
+  const d = haversineMiles(a.lat, a.lng, cur.lat, cur.lng);
+  if (legIsNoise(d, fixAccuracy(a), fixAccuracy(cur))) return 0;
+  if (d / (dtSeconds / 3600) > MAX_BRIDGE_MPH) return 0;
+  return d;
+}
+
+/** Seconds between two points' timestamps, 0 when unusable. */
+function legSeconds(a, b) {
+  const ta = a?.t ? new Date(a.t).getTime() : NaN;
+  const tb = b?.t ? new Date(b.t).getTime() : NaN;
+  const s = (tb - ta) / 1000;
+  return Number.isFinite(s) && s > 0 ? s : 0;
+}
+
 /**
  * Classify a raw path into on-foot and too-fast movement.
  *
@@ -310,6 +371,8 @@ export function analyzeOnFoot(path = []) {
   let miles = 0;
   let rejectedMiles = 0;
   let rejectedSegments = 0;
+  let bridgedMiles = 0;
+  let bridgedSeconds = 0;
 
   /*
    * ANCHOR-BASED SCAN, 2026-09-13.
@@ -342,7 +405,16 @@ export function analyzeOnFoot(path = []) {
   for (let i = 1; i < points.length; i++) {
     const cur = points[i];
     if (gapIsCorroborated(points[i - 1], cur)) {
-      anchor = i; // signal-loss break: never bridged, never judged; re-origin here
+      // Signal-loss break: bridge it if the straight line is on-foot slow
+      // (see GAP BRIDGING above), then re-origin here.
+      const b = gapBridgeMiles(points[anchor], cur);
+      if (b > 0) {
+        miles += b;
+        bridgedMiles += b;
+        bridgedSeconds += legSeconds(points[anchor], cur);
+        cur.bridged = true;
+      }
+      anchor = i;
       skipSpeed = true;
       continue;
     }
@@ -407,6 +479,8 @@ export function analyzeOnFoot(path = []) {
     miles: Number(miles.toFixed(4)),
     rejectedMiles: Number(rejectedMiles.toFixed(4)),
     rejectedSegments,
+    bridgedMiles: Number(bridgedMiles.toFixed(4)),
+    bridgedSeconds: Math.round(bridgedSeconds),
     rawMiles: Number(rawMiles.toFixed(4)),
     flagged,
     flagReason: flagged
@@ -468,7 +542,9 @@ export function pathDistanceMiles(path = []) {
   for (let i = 1; i < path.length; i++) {
     const cur = path[i];
     if (gapIsCorroborated(path[i - 1], cur)) {
-      anchor = i; // signal-loss break: never bridged, never judged; re-origin here
+      // Signal-loss break: bridged exactly as analyzeOnFoot bridges it.
+      total += gapBridgeMiles(path[anchor], cur);
+      anchor = i;
       skipSpeed = true;
       continue;
     }

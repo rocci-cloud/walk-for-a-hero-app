@@ -3,7 +3,7 @@
  * GEO_SOURCE.md). The .js file is never edited in this repo; update both
  * together when the website's copy changes.
  */
-export type GeoPoint = { lat: number; lng: number; t?: string; acc?: number; gap?: boolean; fast?: boolean };
+export type GeoPoint = { lat: number; lng: number; t?: string; acc?: number; gap?: boolean; fast?: boolean; bridged?: boolean; resume?: boolean };
 
 export function haversineMiles(lat1: number, lon1: number, lat2: number, lon2: number): number;
 export const MAX_ON_FOOT_MPH: number;
@@ -28,10 +28,16 @@ export function gpsFixQuality(accuracy: number): string;
 export function segmentMph(a: GeoPoint, b: GeoPoint): number | null;
 export const MAX_HANDOVER_METRES: number;
 export function gapIsCorroborated(prev: GeoPoint, cur: GeoPoint): boolean;
+export const MAX_BRIDGE_MPH: number;
+export const MAX_BRIDGE_SECONDS: number;
+export function gapBridgeMiles(a: GeoPoint, cur: GeoPoint): number;
 export function analyzeOnFoot(path?: GeoPoint[]): {
   miles: number;
   rejectedMiles: number;
   rejectedSegments: number;
+  bridgedMiles: number;
+  bridgedSeconds: number;
+  rawMiles: number;
   flagged: boolean;
   flagReason: string;
   points: GeoPoint[];

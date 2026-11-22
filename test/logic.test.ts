@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash, randomBytes } from "node:crypto";
 import { initialCaptureState, processFix, pauseState, resumeState, type CaptureState, type PathPoint } from "../src/walk/capture";
-import { analyzeOnFoot } from "../src/lib/geo";
+import { analyzeOnFoot, pathDistanceMiles } from "../src/lib/geo";
 import { base64UrlFromBytes, base64ToBase64Url, parseAuthCallback, CODE_RE } from "../src/lib/pkce";
 import { firstName, formalName, initials } from "../src/lib/names";
 import { milestoneCrossed, MILESTONES } from "../src/lib/milestones";
@@ -112,6 +112,52 @@ test("pause/resume breaks the line but is NOT counted as signal loss", () => {
   const all = [...points, ...more.points];
   assert.equal(all.filter((p) => p.gap).length, 1, "the resumed line starts with a gap marker");
   assert.equal(more.state.gapCount, 0, "10 minutes paused is not signal loss");
+});
+
+// ---------- iPhone suspension gaps (2026-11-22, Glenn Baker's walks) ----------
+// iOS cut a While-Using app's background location every few minutes: ~1 min
+// of fixes, then 4-5 min of nothing. The gap used to throw that distance away.
+
+/** 1 min walking, 4 min silence, repeated — 3 mph due north the whole time. */
+function iphoneSuspensionWalk(t0: number, cycles: number) {
+  const all = walkNorth(START, (cycles * 5) / 60 * 3, 3, t0 + 1000, 5, 2, 4, 41);
+  return all.filter((f) => ((f.timeMs - t0 - 1000) / 1000) % 300 < 60);
+}
+
+test("an iPhone suspension gap at walking pace is bridged, not thrown away", () => {
+  const t0 = 9_000_000;
+  const { state, points } = feed(initialCaptureState(t0), iphoneSuspensionWalk(t0, 6));
+  assert.equal(state.gapCount, 6, "each 4-minute silence is still reported as a gap");
+  assert.ok(points.filter((p) => p.gap).every((p) => !p.resume), "signal loss is never marked as a pause");
+  const r = analyzeOnFoot(points as any);
+  const walked = 1.5; // 30 min at 3 mph; the final fix at 30:00 closes the sixth gap
+  assert.ok(Math.abs(r.miles - walked) < 0.06, `credited ${r.miles} vs walked ${walked.toFixed(3)}`);
+  assert.ok(r.bridgedMiles > 0.9, `bridged ${r.bridgedMiles}`);
+  assert.equal(r.rejectedMiles, 0);
+  assert.equal(pathDistanceMiles(points as any).toFixed(3), r.miles.toFixed(3), "screen = credit");
+});
+
+test("a deliberate pause is marked resume and never bridged", () => {
+  const t0 = 10_000_000;
+  let { state, points } = feed(initialCaptureState(t0), walkNorth(START, 0.05, 3, t0 + 1000, 2, 3, 8, 51));
+  state = pauseState(state);
+  const resumeT = t0 + 5 * 60_000;
+  state = resumeState(state, resumeT);
+  // They walked 200 m while paused (3 mph-ish) — that must NOT count.
+  const after = feed(state, walkNorth({ lat: START.lat + (0.05 * 1609.344 + 200) / M_PER_DEG_LAT, lng: START.lng }, 0.05, 3, resumeT + 1000, 2, 3, 8, 52));
+  const all = [...points, ...after.points];
+  const g = all.filter((p) => p.gap);
+  assert.equal(g.length, 1);
+  assert.equal(g[0].resume, true);
+  assert.equal(analyzeOnFoot(all as any).bridgedMiles, 0);
+});
+
+test("a gap crossed faster than 8 mph is not bridged", () => {
+  const t0 = Date.parse("2026-11-22T13:00:00Z");
+  const at = (m: number, s: number, gap?: boolean) => ({ lat: 28 + m / M_PER_DEG_LAT, lng: -82, acc: 3, t: new Date(t0 + s * 1000).toISOString(), ...(gap ? { gap: true } : {}) });
+  const r = analyzeOnFoot([at(0, 0), at(10, 5), at(546, 125, true), at(556, 130)] as any);
+  assert.equal(r.bridgedMiles, 0);
+  assert.equal(r.rejectedMiles, 0);
 });
 
 test("a mile driven at 30 mph inside a walk is recorded but rejected by the server's analysis", () => {

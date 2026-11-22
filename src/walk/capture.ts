@@ -19,7 +19,10 @@
  *      counted in gap_seconds_total / gap_count, which the server uses to
  *      flag a walk for review.
  *   4. PAUSE / RESUME: a resumed walk also starts a new line (gap: true) but
- *      the paused time is NOT counted as signal loss.
+ *      the paused time is NOT counted as signal loss, and the point carries
+ *      resume: true so the scorer never bridges it (2026-11-22).
+ *   5. BRIDGING happens in the scorer, not here: a short, on-foot-slow
+ *      signal-loss gap is credited as a straight line (geo.js gapBridgeMiles).
  *
  * Speed checks are NOT done here. log-walk-miles re-runs analyzeOnFoot over
  * the whole path and decides what counts; the phone never decides miles.
@@ -37,6 +40,8 @@ export type PathPoint = {
   t: string; // ISO time of the fix
   acc: number; // accuracy radius, metres
   gap?: true;
+  /** 2026-11-22: a deliberate break (Pause → Resume). Never bridged by the scorer. */
+  resume?: true;
 };
 
 export type CaptureState = {
@@ -102,6 +107,8 @@ export function processFix(s: CaptureState, fix: Fix): { state: CaptureState; ou
       t: new Date(now).toISOString(),
       acc,
       ...(markGap ? { gap: true as const } : {}),
+      // Signal loss may be bridged by the scorer; a deliberate pause never is.
+      ...(s.resumePending && signalGapSeconds === 0 ? { resume: true as const } : {}),
     };
     return {
       state: {
