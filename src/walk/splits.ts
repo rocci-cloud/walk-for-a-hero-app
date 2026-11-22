@@ -1,12 +1,13 @@
-import { haversineMiles } from "../lib/geo";
+import { gapBridgeMiles, haversineMiles } from "../lib/geo";
 import type { PathPoint } from "./capture";
 
 export type Split = { mile: number; fraction: number; seconds: number };
 
 /**
  * Mile splits from the route stored on the phone: time taken for each whole
- * mile, plus the last partial mile. Legs across a gap (signal loss or a pause)
- * add neither distance nor time, the same way the credited miles treat them.
+ * mile, plus the last partial mile. A gap leg counts only when the scorer
+ * would bridge it (short signal loss at walking pace, never a pause), the same
+ * way the credited miles treat it; any other gap adds neither distance nor time.
  * Display only — the server's figure is what counts.
  */
 export function mileSplits(points: PathPoint[], milesBefore = 0): Split[] {
@@ -21,7 +22,7 @@ export function mileSplits(points: PathPoint[], milesBefore = 0): Split[] {
   for (let i = 1; i < points.length; i++) {
     const a = points[i - 1];
     const b = points[i];
-    if (b.gap) continue;
+    if (b.gap && !(gapBridgeMiles(a, b) > 0)) continue;
     const d = haversineMiles(a.lat, a.lng, b.lat, b.lng);
     const dt = Math.max(0, (Date.parse(b.t) - Date.parse(a.t)) / 1000);
     if (dt > 0 && d / (dt / 3600) > 15) continue; // faster than on foot: not a walking leg

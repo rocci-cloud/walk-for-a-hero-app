@@ -1,0 +1,8 @@
+{
+  "name": "wfah-background-activity",
+  "version": "1.0.0",
+  "description": "Holds an iOS CLBackgroundActivitySession while a walk is recording",
+  "main": "index.ts",
+  "private": true,
+  "license": "UNLICENSED"
+}
