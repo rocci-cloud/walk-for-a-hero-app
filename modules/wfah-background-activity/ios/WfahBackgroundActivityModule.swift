@@ -79,7 +79,7 @@ public class WfahBackgroundActivityModule: Module {
         self.observe(UIApplication.willTerminateNotification, "n_terminate")
         self.observe(UIApplication.protectedDataWillBecomeUnavailableNotification, "n_files_locked")
         self.observe(UIApplication.protectedDataDidBecomeAvailableNotification, "n_files_unlocked")
-        self.observe(ProcessInfo.powerStateDidChangeNotification, "n_power_state")
+        self.observe(Notification.Name.NSProcessInfoPowerStateDidChange, "n_power_state")
       }
     }
 
