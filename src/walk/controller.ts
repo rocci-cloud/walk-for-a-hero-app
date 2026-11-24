@@ -4,6 +4,7 @@ import { base44, callFunction, functionError, httpStatus } from "../lib/base44";
 import { colors } from "../theme";
 import { initialCaptureState, pauseState, resumeState } from "./capture";
 import { WALK_LOCATION_TASK } from "./locationTask";
+import { absorbNativeEvents, buildDiagnostics } from "./diagnostics";
 import {
   startBackgroundActivity,
   stopBackgroundActivity,
@@ -11,6 +12,7 @@ import {
 import {
   createWalk,
   discardWalk,
+  logDiag,
   getPoints,
   getWalk,
   openWalk,
@@ -81,7 +83,7 @@ export function openSettings() {
   Linking.openSettings().catch(() => {});
 }
 
-async function startUpdates() {
+async function startUpdates(reason: string) {
   /*
    * iOS background-activity session FIRST (2026-11-22). Without it iOS 17+
    * suspends a While-Using app's background location every few minutes —
@@ -89,13 +91,21 @@ async function startUpdates() {
    * Always (re)acquired, including on reattach after a relaunch, because the
    * session does not survive the process. No-op off iOS.
    */
-  await startBackgroundActivity();
-  if (!(await Location.hasStartedLocationUpdatesAsync(WALK_LOCATION_TASK).catch(() => false))) {
-    await Location.startLocationUpdatesAsync(WALK_LOCATION_TASK, TASK_OPTIONS);
+  const held = await startBackgroundActivity();
+  const running = await Location.hasStartedLocationUpdatesAsync(WALK_LOCATION_TASK).catch(() => false);
+  logDiag("start_updates", `reason=${reason} bg_session=${held} already_running=${running}`);
+  if (!running) {
+    try {
+      await Location.startLocationUpdatesAsync(WALK_LOCATION_TASK, TASK_OPTIONS);
+    } catch (e: any) {
+      logDiag("start_updates_error", String(e?.message || e));
+      throw e;
+    }
   }
 }
 
 export async function stopUpdates() {
+  logDiag("stop_updates");
   if (await Location.hasStartedLocationUpdatesAsync(WALK_LOCATION_TASK).catch(() => false)) {
     await Location.stopLocationUpdatesAsync(WALK_LOCATION_TASK).catch(() => {});
   }
@@ -109,7 +119,7 @@ export async function startWalk(ownerEmail: string): Promise<WalkRow> {
   const now = Date.now();
   const walk = createWalk(initialCaptureState(now), ownerEmail, now);
   try {
-    await startUpdates();
+    await startUpdates("start");
   } catch {
     await stopBackgroundActivity();
     discardWalk(walk.id); // don't leave a "Recording" walk with no GPS behind
@@ -131,7 +141,7 @@ export async function resumeWalk(id: string) {
   await ensureLocationPermission();
   const now = Date.now();
   setResumed(id, resumeState(w.capture, now), now);
-  await startUpdates();
+  await startUpdates("resume");
 }
 
 /**
@@ -140,7 +150,8 @@ export async function resumeWalk(id: string) {
  */
 export async function reattachIfWalking() {
   const w = openWalk();
-  if (w?.status === "active") await startUpdates().catch(() => {});
+  await absorbNativeEvents().catch(() => {});
+  if (w?.status === "active") await startUpdates("reattach").catch(() => {});
 }
 
 export type SendOutcome =
@@ -180,6 +191,7 @@ export async function sendWalk(id: string): Promise<SendOutcome> {
     }
   }
 
+  const diagnostics = await buildDiagnostics(w).catch(() => null);
   try {
     const res: any = await callFunction("log-walk-miles", {
       path,
@@ -188,6 +200,9 @@ export async function sendWalk(id: string): Promise<SendOutcome> {
       client_token: w.client_token,
       gap_seconds_total: Math.round(w.capture.gapSecondsTotal),
       gap_count: w.capture.gapCount,
+      // 2026-11-24 (1.0.2): device + event report for the iPhone background-GPS
+      // investigation. Stored as WalkSession.client_diagnostics; never credited from.
+      ...(diagnostics ? { diagnostics } : {}),
     });
     const session = res?.session || {};
     const result: FinishResult = {

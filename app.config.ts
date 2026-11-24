@@ -22,7 +22,7 @@ const config: ExpoConfig = {
   // release — a 0.x on a store listing reads as unfinished, and Apple's
   // reviewers treat it that way. Build numbers are separate and are
   // auto-incremented by EAS (eas.json: appVersionSource "remote").
-  version: "1.0.1",
+  version: "1.0.2",
   orientation: "portrait",
   icon: "./assets/icon.png",
   userInterfaceStyle: "light",

@@ -71,6 +71,12 @@ function database() {
       gap INTEGER NOT NULL DEFAULT 0,
       PRIMARY KEY (walk_id, seq)
     );
+    CREATE TABLE IF NOT EXISTS diag_events (
+      t_ms INTEGER NOT NULL,
+      kind TEXT NOT NULL,
+      detail TEXT NOT NULL DEFAULT ''
+    );
+    CREATE INDEX IF NOT EXISTS diag_events_t ON diag_events (t_ms);
   `);
   return db;
 }
@@ -194,6 +200,47 @@ export function discardWalk(id: string) {
   });
 }
 
+/*
+ * Walk diagnostics (2026-11-24, app 1.0.2). A small time-ordered event log —
+ * launches, foreground/background, GPS batches received while backgrounded,
+ * task errors, native lifecycle events — sent with each walk so an iPhone
+ * that stops recording with the screen locked can tell us why. Diagnostics
+ * must never break recording, so every write swallows its own errors.
+ */
+export function logDiag(kind: string, detail = "", tMs = Date.now()) {
+  try {
+    database().runSync("INSERT INTO diag_events (t_ms, kind, detail) VALUES (?, ?, ?)", [
+      tMs,
+      kind.slice(0, 40),
+      detail.slice(0, 200),
+    ]);
+  } catch {
+    /* diagnostics only */
+  }
+}
+
+export type DiagEvent = { t: number; k: string; d: string };
+
+export function diagEventsBetween(fromMs: number, toMs: number, limit = 600): DiagEvent[] {
+  try {
+    const rows: any[] = database().getAllSync(
+      "SELECT t_ms, kind, detail FROM diag_events WHERE t_ms >= ? AND t_ms <= ? ORDER BY t_ms LIMIT ?",
+      [fromMs, toMs, limit],
+    );
+    return rows.map((r) => ({ t: r.t_ms, k: r.kind, d: r.detail }));
+  } catch {
+    return [];
+  }
+}
+
+export function databaseFilePath(): string | null {
+  try {
+    return (database() as any).databasePath ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Keep the phone tidy: forget finished walks (and their routes) after 30 days. */
 export function pruneFinished(nowMs: number) {
   const cutoff = nowMs - 30 * 24 * 60 * 60 * 1000;
@@ -204,6 +251,7 @@ export function pruneFinished(nowMs: number) {
       [cutoff],
     );
     d.runSync("DELETE FROM walks WHERE status = 'done' AND created_ms < ?", [cutoff]);
+    d.runSync("DELETE FROM diag_events WHERE t_ms < ?", [cutoff]);
   });
 }
 
@@ -213,6 +261,7 @@ export function wipeAll() {
   d.withTransactionSync(() => {
     d.runSync("DELETE FROM points");
     d.runSync("DELETE FROM walks");
+    d.runSync("DELETE FROM diag_events");
   });
 }
 
