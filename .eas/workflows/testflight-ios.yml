@@ -1,0 +1,28 @@
+# iPhone build straight to TestFlight (2026-11-24). Runs whenever the
+# `testflight` branch is pushed, or by hand from expo.dev > Workflows.
+#
+# Builds iOS only (production profile, same signing as the store build), then
+# uploads it to App Store Connect so it appears in TestFlight. It does NOT send
+# anything to Apple for App Store review and does not touch the live app.
+# Use it to put a diagnostic or fix build in a tester's hands first.
+name: TestFlight (iOS)
+
+on:
+  push:
+    branches: ['testflight']
+  workflow_dispatch: {}
+
+jobs:
+  build_ios:
+    name: Build iOS
+    type: build
+    params:
+      platform: ios
+      profile: production
+  submit_ios:
+    name: Upload to TestFlight
+    needs: [build_ios]
+    type: submit
+    params:
+      build_id: ${{ needs.build_ios.outputs.build_id }}
+      profile: production
