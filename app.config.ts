@@ -11,6 +11,14 @@ import type { ExpoConfig } from "expo/config";
 
 const IS_DEV = process.env.APP_VARIANT === "development";
 
+/*
+ * 1.0.3 (2026-11-27): the app now reads the phone's step counter during a
+ * walk (iPhone CMPedometer, Android TYPE_STEP_COUNTER) so miles walked while
+ * iOS has paused GPS still count. This is the Motion & Fitness prompt text.
+ */
+const MOTION_WHY =
+  "Walk For A Hero counts your steps during a walk, so miles you walk while GPS drops out with your screen locked still count for your hero. Steps are only read for the time between Start and End Walk.";
+
 const LOCATION_WHY =
   "Walk For A Hero records your route while a walk is running — including with the screen locked — so every mile you walk is counted for your hero. Location is only used between Start and End Walk.";
 
@@ -22,7 +30,7 @@ const config: ExpoConfig = {
   // release — a 0.x on a store listing reads as unfinished, and Apple's
   // reviewers treat it that way. Build numbers are separate and are
   // auto-incremented by EAS (eas.json: appVersionSource "remote").
-  version: "1.0.2",
+  version: "1.0.3",
   orientation: "portrait",
   icon: "./assets/icon.png",
   userInterfaceStyle: "light",
@@ -33,6 +41,7 @@ const config: ExpoConfig = {
     infoPlist: {
       NSLocationWhenInUseUsageDescription: LOCATION_WHY,
       NSLocationAlwaysAndWhenInUseUsageDescription: LOCATION_WHY,
+      NSMotionUsageDescription: MOTION_WHY,
       UIBackgroundModes: ["location"],
       ITSAppUsesNonExemptEncryption: false,
     },
@@ -111,6 +120,9 @@ const config: ExpoConfig = {
       "ACCESS_FINE_LOCATION",
       "FOREGROUND_SERVICE",
       "FOREGROUND_SERVICE_LOCATION",
+      // 1.0.3: step counter (TYPE_STEP_COUNTER) to fill GPS gaps. Runtime
+      // permission on Android 10+, asked at Start Walk.
+      "ACTIVITY_RECOGNITION",
     ],
     // Route art is written to the app's own cache and handed to the share
     // menu, so no storage access is needed (and Google Play restricts it).
@@ -163,16 +175,13 @@ const config: ExpoConfig = {
          */
         locationAlwaysPermission: LOCATION_WHY,
         /*
-         * The app never calls Location.watchMotionActivityAsync, the only path
-         * that reaches CoreMotion, so the phone never shows this to a walker.
-         * It still has to be present: expo-location compiles CoreMotion code
-         * into the app, and App Store Connect scans the binary, not our code.
-         * Removing the key (motionUsagePermission: false) got build 1.0.0 (4)
-         * rejected with error 90683 on 2026-10-15. So the string stays, and it
-         * says plainly that motion is not used.
+         * NSMotionUsageDescription. Until 1.0.2 this said motion was NOT used
+         * (the key only had to exist because expo-location links CoreMotion;
+         * removing it got 1.0.0 (4) rejected with 90683 on 2026-10-15).
+         * From 1.0.3 the app really does read the step counter, so the string
+         * says what for. Walkers see it as the Motion & Fitness prompt.
          */
-        motionUsagePermission:
-          "Walk For A Hero does not use your motion activity. Your miles are measured by GPS only.",
+        motionUsagePermission: MOTION_WHY,
         isIosBackgroundLocationEnabled: true,
         isAndroidBackgroundLocationEnabled: false,
         isAndroidForegroundServiceEnabled: true,

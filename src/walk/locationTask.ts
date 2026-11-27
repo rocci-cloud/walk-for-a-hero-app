@@ -3,6 +3,7 @@ import type { LocationObject } from "expo-location";
 import { AppState } from "react-native";
 import { processFix, type PathPoint } from "./capture";
 import { appendPoints, logDiag, openWalk, saveCapture } from "./store";
+import { drainLiveFixes, onLiveFixes } from "../../modules/wfah-background-activity";
 
 /**
  * The background location task. Registered at module load from index.ts so
@@ -118,6 +119,60 @@ export function ingestLocations(locations: LocationObject[]) {
       /* a screen error must never stop recording */
     }
   });
+}
+
+/*
+ * 1.0.3 (2026-11-27): on iOS 17+ the walk is recorded natively with Apple's
+ * CLLocationUpdate.liveUpdates (modules/wfah-background-activity). Native
+ * appends every fix to a file and pings here; this drains the file into the
+ * SAME ingestLocations path the expo-location task uses, so capture rules,
+ * gap marking, storage and diagnostics are identical. Also drained whenever
+ * the app comes to the front and right before a walk is paused or finished,
+ * so a fix recorded while JS was suspended (or before a relaunch) is never
+ * lost.
+ */
+let draining: Promise<void> | null = null;
+export function drainNativeFixes(): Promise<void> {
+  if (draining) return draining;
+  draining = (async () => {
+    try {
+      const rows = await drainLiveFixes();
+      if (rows.length) {
+        const locations = rows.map(
+          (r) =>
+            ({
+              coords: {
+                latitude: r[0],
+                longitude: r[1],
+                accuracy: r[2],
+                speed: typeof r[4] === "number" && r[4] >= 0 ? r[4] : null,
+                altitude: null,
+                altitudeAccuracy: null,
+                heading: null,
+              },
+              timestamp: r[3],
+            }) as LocationObject,
+        );
+        ingestLocations(locations);
+      }
+    } catch (e: any) {
+      logDiag("ingest_error", `native ${String(e?.message || e)}`);
+    } finally {
+      draining = null;
+    }
+  })();
+  return draining;
+}
+
+try {
+  onLiveFixes(() => {
+    void drainNativeFixes();
+  });
+  AppState.addEventListener("change", (next) => {
+    if (next === "active") void drainNativeFixes();
+  });
+} catch {
+  /* no native module (Android, Expo Go, tests) */
 }
 
 if (!TaskManager.isTaskDefined(WALK_LOCATION_TASK)) {

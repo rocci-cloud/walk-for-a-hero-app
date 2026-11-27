@@ -1,13 +1,16 @@
 import * as Location from "expo-location";
-import { Linking } from "react-native";
+import { Linking, Platform } from "react-native";
 import { base44, callFunction, functionError, httpStatus } from "../lib/base44";
 import { colors } from "../theme";
 import { initialCaptureState, pauseState, resumeState } from "./capture";
-import { WALK_LOCATION_TASK } from "./locationTask";
+import { WALK_LOCATION_TASK, drainNativeFixes } from "./locationTask";
+import { buildPedometer, requestStepPermission, startStepCounting, stopStepCounting } from "./steps";
 import { absorbNativeEvents, buildDiagnostics } from "./diagnostics";
 import {
   startBackgroundActivity,
+  startLiveLocation,
   stopBackgroundActivity,
+  stopLiveLocation,
 } from "../../modules/wfah-background-activity";
 import {
   createWalk,
@@ -85,15 +88,33 @@ export function openSettings() {
 
 async function startUpdates(reason: string) {
   /*
-   * iOS background-activity session FIRST (2026-11-22). Without it iOS 17+
-   * suspends a While-Using app's background location every few minutes —
-   * Glenn Baker's walks recorded ~1 min, then lost 4-5 min, over and over.
-   * Always (re)acquired, including on reattach after a relaunch, because the
-   * session does not survive the process. No-op off iOS.
+   * iOS 17+ (1.0.3, 2026-11-27): record natively with CLLocationUpdate.liveUpdates
+   * inside a CLBackgroundActivitySession. Steve Olds' 1.0.2 report proved the
+   * expo-location task (classic CLLocationManager) was suspended ~50 s after
+   * every lock even with the session held, so it must NOT run alongside:
+   * stop it if a 1.0.2 install left it running.
+   */
+  if (Platform.OS === "ios") {
+    const live = await startLiveLocation(reason);
+    if (live) {
+      const legacy = await Location.hasStartedLocationUpdatesAsync(WALK_LOCATION_TASK).catch(() => false);
+      if (legacy) await Location.stopLocationUpdatesAsync(WALK_LOCATION_TASK).catch(() => {});
+      logDiag("start_updates", `reason=${reason} mode=live legacy_stopped=${legacy}`);
+      await drainNativeFixes();
+      return;
+    }
+  }
+  if (Platform.OS === "android") startStepCounting(reason === "start");
+
+  /*
+   * Fallback (Android, and iOS < 17): the expo-location task.
+   * iOS background-activity session FIRST (2026-11-22). Always (re)acquired,
+   * including on reattach after a relaunch, because the session does not
+   * survive the process. No-op off iOS.
    */
   const held = await startBackgroundActivity();
   const running = await Location.hasStartedLocationUpdatesAsync(WALK_LOCATION_TASK).catch(() => false);
-  logDiag("start_updates", `reason=${reason} bg_session=${held} already_running=${running}`);
+  logDiag("start_updates", `reason=${reason} mode=task bg_session=${held} already_running=${running}`);
   if (!running) {
     try {
       await Location.startLocationUpdatesAsync(WALK_LOCATION_TASK, TASK_OPTIONS);
@@ -106,6 +127,11 @@ async function startUpdates(reason: string) {
 
 export async function stopUpdates() {
   logDiag("stop_updates");
+  if (Platform.OS === "ios") {
+    await drainNativeFixes(); // ingest the last fixes while the walk is still active
+    await stopLiveLocation();
+  }
+  if (Platform.OS === "android") stopStepCounting();
   if (await Location.hasStartedLocationUpdatesAsync(WALK_LOCATION_TASK).catch(() => false)) {
     await Location.stopLocationUpdatesAsync(WALK_LOCATION_TASK).catch(() => {});
   }
@@ -116,6 +142,9 @@ export async function startWalk(ownerEmail: string): Promise<WalkRow> {
   const existing = openWalk();
   if (existing) return existing; // never two walks at once
   await ensureLocationPermission();
+  // 1.0.3: Motion & Fitness / Physical activity for the step-counter backstop.
+  // Asked from this foreground tap; a "no" never blocks the walk.
+  await requestStepPermission();
   const now = Date.now();
   const walk = createWalk(initialCaptureState(now), ownerEmail, now);
   try {
@@ -192,6 +221,8 @@ export async function sendWalk(id: string): Promise<SendOutcome> {
   }
 
   const diagnostics = await buildDiagnostics(w).catch(() => null);
+  // 1.0.3: step counts for the walk's GPS span (re-read on every retry).
+  const pedometer = await buildPedometer(path).catch(() => null);
   try {
     const res: any = await callFunction("log-walk-miles", {
       path,
@@ -203,6 +234,9 @@ export async function sendWalk(id: string): Promise<SendOutcome> {
       // 2026-11-24 (1.0.2): device + event report for the iPhone background-GPS
       // investigation. Stored as WalkSession.client_diagnostics; never credited from.
       ...(diagnostics ? { diagnostics } : {}),
+      // 2026-11-27 (1.0.3): per-minute step buckets; log-walk-miles fills GPS
+      // signal gaps from them after calibrating against the tracked route.
+      ...(pedometer ? { pedometer } : {}),
     });
     const session = res?.session || {};
     const result: FinishResult = {

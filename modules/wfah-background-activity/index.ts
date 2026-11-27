@@ -11,8 +11,20 @@ import { requireOptionalNativeModule } from "expo-modules-core";
 type Native = {
   start(): Promise<boolean>;
   stop(): Promise<void>;
+  startLive(reason: string): Promise<boolean>;
+  stopLive(): Promise<void>;
+  drainFixes(): Promise<number[][]>;
+  isLive(): Promise<boolean>;
+  pedometerStatus(): Promise<string>;
+  pedometerRequest(): Promise<string>;
+  pedometerBuckets(
+    startMs: number,
+    endMs: number,
+    bucketSeconds: number,
+  ): Promise<{ status: string; buckets: { s: number; e: number; steps: number; m?: number }[]; total?: { steps?: number; m?: number } }>;
   snapshot(dbPath: string | null): Promise<Record<string, unknown>>;
   drainEvents(): Promise<string[]>;
+  addListener?(event: "onFixes", cb: (e: { at: number }) => void): { remove(): void };
 };
 
 const native =
@@ -33,6 +45,74 @@ export async function stopBackgroundActivity(): Promise<void> {
     await native?.stop();
   } catch {
     /* never block stopping a walk */
+  }
+}
+
+/**
+ * 1.0.3: record the walk natively with Apple's CLLocationUpdate.liveUpdates
+ * inside the background-activity session (iOS 17+). Returns false where that
+ * is unavailable (older iOS, Android, Expo Go) so the caller falls back to the
+ * expo-location task.
+ */
+export async function startLiveLocation(reason: string): Promise<boolean> {
+  try {
+    return (await native?.startLive(reason)) ?? false;
+  } catch {
+    return false;
+  }
+}
+
+export async function stopLiveLocation(): Promise<void> {
+  try {
+    await native?.stopLive();
+  } catch {
+    /* never block stopping a walk */
+  }
+}
+
+export async function liveLocationRunning(): Promise<boolean> {
+  try {
+    return (await native?.isLive()) ?? false;
+  } catch {
+    return false;
+  }
+}
+
+/** Native fixes not yet ingested: [lat, lng, accuracyM, epochMs, speed]. */
+export async function drainLiveFixes(): Promise<number[][]> {
+  try {
+    return native ? await native.drainFixes() : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Called (throttled ~1.5 s) whenever native has recorded new fixes. */
+export function onLiveFixes(fn: () => void): () => void {
+  try {
+    const sub = native?.addListener?.("onFixes", () => fn());
+    return () => sub?.remove();
+  } catch {
+    return () => {};
+  }
+}
+
+export const iosNativeAvailable = !!native;
+
+/** Motion & Fitness: "authorized" | "denied" | "restricted" | "notDetermined" | "unavailable". */
+export async function iosPedometerRequest(): Promise<string> {
+  try {
+    return (await native?.pedometerRequest()) ?? "unavailable";
+  } catch {
+    return "unavailable";
+  }
+}
+
+export async function iosPedometerBuckets(startMs: number, endMs: number, bucketSeconds = 60) {
+  try {
+    return native ? await native.pedometerBuckets(startMs, endMs, bucketSeconds) : null;
+  } catch {
+    return null;
   }
 }
 
