@@ -246,6 +246,8 @@ export async function sendWalk(id: string): Promise<SendOutcome> {
       flag_reason: String(res?.flag_reason ?? session.flag_reason ?? ""),
       duplicate: !!(res?.duplicate || res?.already_completed),
       miles_walked: typeof res?.walker?.miles_walked === "number" ? res.walker.miles_walked : undefined,
+      ...(typeof pedometer?.total_steps === "number" ? { steps: pedometer.total_steps } : {}),
+      ...(Number(session.pedometer_miles) > 0 ? { step_miles: Number(session.pedometer_miles) } : {}),
     };
     setDone(id, result);
     return { kind: "done", result };

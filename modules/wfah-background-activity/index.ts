@@ -22,6 +22,7 @@ type Native = {
     endMs: number,
     bucketSeconds: number,
   ): Promise<{ status: string; buckets: { s: number; e: number; steps: number; m?: number }[]; total?: { steps?: number; m?: number } }>;
+  pedometerTotal(startMs: number, endMs: number): Promise<{ steps: number; m?: number }>;
   snapshot(dbPath: string | null): Promise<Record<string, unknown>>;
   drainEvents(): Promise<string[]>;
   addListener?(event: "onFixes", cb: (e: { at: number }) => void): { remove(): void };
@@ -113,6 +114,16 @@ export async function iosPedometerBuckets(startMs: number, endMs: number, bucket
     return native ? await native.pedometerBuckets(startMs, endMs, bucketSeconds) : null;
   } catch {
     return null;
+  }
+}
+
+/** 1.0.4: steps between two times (live Steps tile). -1 when unavailable. */
+export async function iosPedometerTotal(startMs: number, endMs: number): Promise<number> {
+  try {
+    const r = native ? await native.pedometerTotal(startMs, endMs) : null;
+    return typeof r?.steps === "number" ? r.steps : -1;
+  } catch {
+    return -1;
   }
 }
 

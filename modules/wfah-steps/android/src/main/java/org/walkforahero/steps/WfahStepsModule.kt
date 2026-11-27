@@ -49,6 +49,13 @@ class WfahStepsModule : Module(), SensorEventListener {
     if (e.sensor?.type != Sensor.TYPE_STEP_COUNTER || e.values.isEmpty()) return
     val ageMs = (SystemClock.elapsedRealtimeNanos() - e.timestamp) / 1_000_000L
     val epochMs = System.currentTimeMillis() - ageMs.coerceAtLeast(0L)
+    // 1.0.4: live Steps tile. The first reading of a walk is its baseline.
+    val value = e.values[0].toDouble()
+    prefs()?.let { p ->
+      val ed = p.edit()
+      if (!p.contains("baseline")) ed.putFloat("baseline", value.toFloat())
+      ed.putFloat("last", value.toFloat()).apply()
+    }
     if (epochMs - lastStoredMs < 15_000L) return
     lastStoredMs = epochMs
     appendSample(epochMs, e.values[0].toDouble())
@@ -60,7 +67,8 @@ class WfahStepsModule : Module(), SensorEventListener {
     if (registered) return true
     val sm = sensorManager() ?: return false
     val sensor = stepSensor() ?: return false
-    registered = sm.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL, 60_000_000)
+    // 10 s batching: the live Steps tile stays current without waking the CPU per step.
+    registered = sm.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL, 10_000_000)
     return registered
   }
 
@@ -80,7 +88,7 @@ class WfahStepsModule : Module(), SensorEventListener {
     /** Start listening. reset=true clears samples from any earlier walk. */
     Function("start") { reset: Boolean ->
       if (reset) {
-        prefs()?.edit()?.remove("samples")?.apply()
+        prefs()?.edit()?.remove("samples")?.remove("baseline")?.remove("last")?.apply()
         lastStoredMs = 0L
       }
       register()
@@ -97,6 +105,16 @@ class WfahStepsModule : Module(), SensorEventListener {
         sensorManager()?.flush(this@WfahStepsModule) ?: false
       } else {
         false
+      }
+    }
+
+    /** Steps since this walk's first reading, or -1 before the first reading. */
+    Function("liveSteps") {
+      val p = prefs()
+      if (p == null || !p.contains("baseline") || !p.contains("last")) {
+        -1.0
+      } else {
+        (p.getFloat("last", 0f) - p.getFloat("baseline", 0f)).toDouble().coerceAtLeast(0.0)
       }
     }
 

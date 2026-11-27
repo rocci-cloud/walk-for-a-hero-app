@@ -326,6 +326,27 @@ public class WfahBackgroundActivityModule: Module {
       }
     }
 
+    /// 1.0.4: steps (and metres) between two epoch-ms times, for the live Steps tile.
+    /// Read from the motion coprocessor, so it is right even after the app slept.
+    AsyncFunction("pedometerTotal") { (startMs: Double, endMs: Double, promise: Promise) in
+      guard CMPedometer.isStepCountingAvailable(), endMs > startMs else {
+        promise.resolve(["steps": -1.0])
+        return
+      }
+      self.pedometer.queryPedometerData(
+        from: Date(timeIntervalSince1970: startMs / 1000),
+        to: Date(timeIntervalSince1970: endMs / 1000)
+      ) { data, _ in
+        guard let d = data else {
+          promise.resolve(["steps": -1.0])
+          return
+        }
+        var out: [String: Any] = ["steps": d.numberOfSteps.doubleValue]
+        if let m = d.distance { out["m"] = m.doubleValue }
+        promise.resolve(out)
+      }
+    }
+
     /// Steps and metres per bucket between two epoch-ms times, plus the total.
     AsyncFunction("pedometerBuckets") { (startMs: Double, endMs: Double, bucketSeconds: Double, promise: Promise) in
       guard CMPedometer.isStepCountingAvailable(), endMs > startMs else {

@@ -1,6 +1,7 @@
 import { PermissionsAndroid, Platform } from "react-native";
-import { iosPedometerBuckets, iosPedometerRequest } from "../../modules/wfah-background-activity";
+import { iosPedometerBuckets, iosPedometerRequest, iosPedometerTotal } from "../../modules/wfah-background-activity";
 import {
+  androidLiveSteps,
   androidStepsAvailable,
   androidStepsFlush,
   androidStepSamples,
@@ -146,4 +147,22 @@ export async function buildPedometer(path: PathPoint[]): Promise<PedometerPayloa
     logDiag("steps_read", `error ${String(e?.message || e)}`);
   }
   return null;
+}
+
+/**
+ * 1.0.4: steps so far this walk, for the live Steps tile. -1 when the phone
+ * has no step counter, permission was refused, or nothing is known yet.
+ * iPhone asks the motion coprocessor for the walk's whole span, so the
+ * number is right even after the app slept with the screen locked.
+ */
+export async function liveWalkSteps(startedAtIso: string): Promise<number> {
+  try {
+    const from = Date.parse(startedAtIso);
+    if (!Number.isFinite(from)) return -1;
+    if (Platform.OS === "ios") return await iosPedometerTotal(from, Date.now());
+    if (Platform.OS === "android") return androidLiveSteps();
+  } catch {
+    /* display only */
+  }
+  return -1;
 }

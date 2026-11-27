@@ -134,8 +134,16 @@ export default function WalkResult() {
           <View style={{ flexDirection: "row" }}>
             <Stat label="Time" value={formatElapsed(secs)} />
             <Stat label="Pace" value={pace ? pace.replace(" /mi", "") : "—"} />
+            {typeof r.steps === "number" && r.steps > 0 ? (
+              <Stat label="Steps" value={String(Math.round(r.steps)).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} />
+            ) : null}
             <Stat label="Mission" value={`${after.toFixed(1)} / ${goal}`} />
           </View>
+          {typeof r.step_miles === "number" && r.step_miles >= 0.01 ? (
+            <Text style={styles.small}>
+              Includes {r.step_miles.toFixed(2)} mi from your step counter, where GPS dropped out.
+            </Text>
+          ) : null}
         </View>
         <Text style={styles.note}>{PROJECTION_NOTE}</Text>
         </Rise>

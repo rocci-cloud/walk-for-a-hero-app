@@ -39,6 +39,10 @@ export type FinishResult = {
   flag_reason: string;
   duplicate?: boolean;
   miles_walked?: number;
+  /** 1.0.4: steps the phone counted during the walk (when available). */
+  steps?: number;
+  /** 1.0.4: miles the server credited across GPS gaps from the step counter. */
+  step_miles?: number;
 };
 
 let db: SQLite.SQLiteDatabase | null = null;

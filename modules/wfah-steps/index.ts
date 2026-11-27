@@ -13,6 +13,7 @@ type Native = {
   stop(): void;
   flush(): boolean;
   samples(): number[][];
+  liveSteps(): number;
 };
 
 const native = Platform.OS === "android" ? requireOptionalNativeModule<Native>("WfahSteps") : null;
@@ -55,5 +56,15 @@ export function androidStepSamples(): number[][] {
     return native?.samples() ?? [];
   } catch {
     return [];
+  }
+}
+
+/** 1.0.4: steps since this walk's first reading, or -1. */
+export function androidLiveSteps(): number {
+  try {
+    const n = native?.liveSteps();
+    return typeof n === "number" ? n : -1;
+  } catch {
+    return -1;
   }
 }

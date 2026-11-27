@@ -16,6 +16,7 @@ import { analyzeOnFoot, formatElapsed, formatPace } from "../../lib/geo";
 import { backerCurrentCharge, firstName, followingThisWalk, heroFullName, money } from "../../lib/data";
 import { MISSION_MILES } from "../../lib/config";
 import { onWalkUpdated } from "../../walk/locationTask";
+import { liveWalkSteps } from "../../walk/steps";
 import { WalkError, finishWalk, openSettings, pauseWalk, resumeWalk, sendWalk, startWalk, type SendOutcome } from "../../walk/controller";
 import { discardWalk, getPoints, openWalk, recentDone, walkingSeconds, type WalkRow } from "../../walk/store";
 import type { PathPoint } from "../../walk/capture";
@@ -70,6 +71,29 @@ export default function WalkScreen() {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
+
+  /*
+   * 1.0.4: live step count. The phone's own step counter keeps counting while
+   * GPS drops out; at End Walk those steps fill the gaps. Shown so walkers
+   * can see it working. -1 = no step counter / permission refused: tile hidden.
+   */
+  const [stepReading, setStepReading] = useState<{ at: string; n: number } | null>(null);
+  const walkStartedAt = walk && walk.status !== "done" ? walk.started_at : null;
+  const steps = walkStartedAt && stepReading?.at === walkStartedAt ? stepReading.n : -1;
+  useEffect(() => {
+    if (!walkStartedAt) return;
+    let alive = true;
+    const read = () =>
+      liveWalkSteps(walkStartedAt).then((n) => {
+        if (alive) setStepReading({ at: walkStartedAt, n });
+      });
+    read();
+    const t = setInterval(read, 3000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [walkStartedAt]);
 
   // Live miles use the SAME analysis the server runs at Finish, so the number
   // on screen is the number that will be credited (the server has the last word).
@@ -263,6 +287,7 @@ export default function WalkScreen() {
             <View style={styles.tiles}>
               <Tile label="Time" value={formatElapsed(seconds)} />
               <Tile label="Pace" value={pace ? pace.replace(" /mi", "") : "—"} />
+              {steps >= 0 ? <Tile label="Steps" value={formatSteps(steps)} /> : null}
               <Tile label="GPS" value={lastAcc != null ? `±${Math.round(lastAcc)} m` : "…"} />
             </View>
             {cheers.length > 0 ? (
@@ -273,7 +298,7 @@ export default function WalkScreen() {
 
             {walk && walk.capture.gapCount > 0 && status !== "finishing" ? (
               <Text style={styles.note}>
-                GPS lock lost {walk.capture.gapCount} time{walk.capture.gapCount === 1 ? "" : "s"} (this is GPS, not your cell bars). Distance across short gaps still counts in a straight line, so keep walking.
+                GPS lock lost {walk.capture.gapCount} time{walk.capture.gapCount === 1 ? "" : "s"} (this is GPS, not your cell bars). {steps >= 0 ? "Your step counter keeps counting, and at End Walk it fills those gaps, so keep walking." : "Distance across short gaps still counts in a straight line, so keep walking."}
               </Text>
             ) : null}
             {problem && <Problem problem={problem} />}
@@ -370,6 +395,10 @@ function ConfirmDelete({ onConfirm }: { onConfirm: () => void }) {
       accessibilityHint="This walk hasn't been counted. Deleting removes its route and miles from your phone."
     />
   );
+}
+
+function formatSteps(n: number) {
+  return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 function Tile({ label, value }: { label: string; value: string }) {
